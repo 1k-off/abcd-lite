@@ -42,10 +42,10 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
       <CardContent className="space-y-4">
         <div>
           <h4 className="text-sm font-medium mb-2">IIS Sites</h4>
-          {project.iisSites.length > 0 ? (
+          {project.iisSites?.length > 0 ? (
             <ul className="space-y-1">
               {project.iisSites.map((site, index) => (
-                <li key={index} className="text-sm text-muted-foreground">
+                <li key={`${project.id}-iis-${site}-${index}`} className="text-sm text-muted-foreground">
                   {site}
                 </li>
               ))}
@@ -56,10 +56,10 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
         </div>
         <div>
           <h4 className="text-sm font-medium mb-2">API Keys</h4>
-          {project.apiKeys.length > 0 ? (
+          {project.apiKeys?.length > 0 ? (
             <ul className="space-y-1">
               {project.apiKeys.map((key, index) => (
-                <li key={index} className="text-sm text-muted-foreground">
+                <li key={`${project.id}-api-${key}-${index}`} className="text-sm text-muted-foreground">
                   {key}
                 </li>
               ))}

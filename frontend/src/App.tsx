@@ -67,7 +67,11 @@ function App() {
         )
       } else {
         const newProject = await createProject(data)
-        setProjects((prev) => [...prev, newProject])
+        if (newProject && newProject.id) {
+          setProjects((prev) => [...prev, newProject])
+        } else {
+          throw new Error("Invalid project response from server")
+        }
       }
       setIsDialogOpen(false)
     } catch (err) {
@@ -113,7 +117,7 @@ function App() {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
+            {(projects || []).map((project) => (
               <ProjectCard
                 key={project.id}
                 project={project}

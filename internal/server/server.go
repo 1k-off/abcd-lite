@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/1k-off/abcd/internal/server/handlers"
-
+	"github.com/1k-off/abcd-lite/internal/server/handlers"
+	"github.com/1k-off/abcd-lite/internal/server/services"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/storage/badger/v2"
@@ -21,16 +21,15 @@ func NewServer(storage *badger.Storage, env string) *fiber.App {
 		}))
 	}
 
-	// Initialize handlers
-	projectHandler := handlers.NewProjectHandler(storage)
+	projectService := services.NewProjectService(storage)
 
 	// API routes
 	api := app.Group("/api")
 	projects := api.Group("/projects")
-	projects.Get("/", projectHandler.GetProjects)
-	projects.Post("/", projectHandler.CreateProject)
-	projects.Put("/:id", projectHandler.UpdateProject)
-	projects.Delete("/:id", projectHandler.DeleteProject)
+	projects.Get("/", handlers.GetProjects(projectService))
+	projects.Post("/", handlers.CreateProject(projectService))
+	projects.Put("/:id", handlers.UpdateProject(projectService))
+	projects.Delete("/:id", handlers.DeleteProject(projectService))
 
 	// Health check
 	app.Get("/healthz", func(c *fiber.Ctx) error {
