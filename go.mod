@@ -1,4 +1,4 @@
-module github.com/1k-off/abcd
+module github.com/1k-off/abcd-lite
 
 go 1.24.4
 

@@ -1,7 +1,7 @@
 import { Project } from "@/types/project"
 
 // In development, use the full URL. In production, use relative paths
-const API_BASE_URL = import.meta.env.DEV ? "http://localhost:8900/api" : "/api"
+const API_BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:8900/api" : "/api"
 
 interface ApiError {
   error: string
@@ -12,12 +12,14 @@ async function handleResponse<T>(response: Response): Promise<T> {
     const errorData = await response.json().catch(() => ({ error: "Unknown error occurred" })) as ApiError
     throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
   }
+
   return response.json()
 }
 
 export async function getProjects(): Promise<Project[]> {
   const response = await fetch(`${API_BASE_URL}/projects`)
-  return handleResponse<Project[]>(response)
+  const data = await handleResponse<{ projects: Project[] }>(response)
+  return data.projects
 }
 
 export async function createProject(data: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<Project> {
@@ -28,7 +30,18 @@ export async function createProject(data: Omit<Project, "id" | "createdAt" | "up
     },
     body: JSON.stringify(data),
   })
-  return handleResponse<Project>(response)
+  const result = await handleResponse<{ project: Project }>(response)
+  
+  if (!result?.project) {
+    throw new Error("Invalid project response from server")
+  }
+
+  const project = result.project
+  if (!project.id || !project.createdAt || !project.updatedAt) {
+    throw new Error("Project response missing required fields")
+  }
+
+  return project
 }
 
 export async function updateProject(id: string, data: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<Project> {
@@ -39,7 +52,8 @@ export async function updateProject(id: string, data: Omit<Project, "id" | "crea
     },
     body: JSON.stringify(data),
   })
-  return handleResponse<Project>(response)
+  const result = await handleResponse<{ project: Project }>(response)
+  return result.project
 }
 
 export async function deleteProject(id: string): Promise<void> {

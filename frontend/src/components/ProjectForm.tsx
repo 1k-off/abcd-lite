@@ -1,6 +1,6 @@
 import { Project } from "@/types/project"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus, X } from "lucide-react"
@@ -23,8 +23,8 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
     if (project) {
       setFormData({
         name: project.name,
-        iisSites: project.iisSites.length > 0 ? project.iisSites : [""],
-        apiKeys: project.apiKeys.length > 0 ? project.apiKeys : [""],
+        iisSites: project.iisSites?.length > 0 ? project.iisSites : [""],
+        apiKeys: project.apiKeys?.length > 0 ? project.apiKeys : [""],
       })
     }
   }, [project])
@@ -71,12 +71,6 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
   return (
     <Card>
       <form onSubmit={handleSubmit}>
-        <CardHeader>
-          <CardTitle>{project ? "Edit Project" : "Create Project"}</CardTitle>
-          <CardDescription>
-            {project ? "Update your project details" : "Add a new project to your list"}
-          </CardDescription>
-        </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">Project Name</Label>
@@ -92,7 +86,7 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
           <div>
             <Label className="mb-2 block">IIS Sites</Label>
             {formData.iisSites.map((site, index) => (
-              <div key={index} className="flex gap-2 mb-2">
+              <div key={`iis-input-${index}`} className="flex gap-2 mb-2">
                 <Input
                   value={site}
                   onChange={(e) => handleArrayInputChange(index, e.target.value, "iisSites")}
@@ -126,7 +120,7 @@ export function ProjectForm({ project, onSubmit, onCancel }: ProjectFormProps) {
           <div>
             <Label className="mb-2 block">API Keys</Label>
             {formData.apiKeys.map((key, index) => (
-              <div key={index} className="flex gap-2 mb-2">
+              <div key={`api-input-${index}`} className="flex gap-2 mb-2">
                 <Input
                   value={key}
                   onChange={(e) => handleArrayInputChange(index, e.target.value, "apiKeys")}

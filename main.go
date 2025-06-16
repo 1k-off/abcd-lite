@@ -6,9 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/1k-off/abcd/internal/config"
-	"github.com/1k-off/abcd/internal/server"
-	"github.com/1k-off/abcd/pkg/logger"
+	"github.com/1k-off/abcd-lite/internal/config"
+	"github.com/1k-off/abcd-lite/internal/server"
+	"github.com/1k-off/abcd-lite/pkg/logger"
 	"github.com/gofiber/storage/badger/v2"
 )
 
