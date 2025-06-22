@@ -7,9 +7,16 @@ import (
 	"syscall"
 
 	"github.com/1k-off/abcd-lite/internal/config"
+	"github.com/1k-off/abcd-lite/internal/deps"
 	"github.com/1k-off/abcd-lite/internal/server"
 	"github.com/gofiber/storage/badger/v2"
 )
+
+func init() {
+	if err := deps.GetDependencies(); err != nil {
+		log.Fatalf("Failed to get dependencies: %v", err)
+	}
+}
 
 func main() {
 	cfg, err := config.Load()
@@ -21,9 +28,6 @@ func main() {
 		Database: cfg.Database.Path + "/abcd.db",
 		Reset:    false,
 	})
-	if err := initializeDatastore(storage); err != nil {
-		log.Fatalf("Failed to initialize datastore: %v", err)
-	}
 
 	// ctx, cancel := context.WithCancel(context.Background())
 
@@ -40,14 +44,4 @@ func main() {
 
 	app := server.NewServer(storage, cfg.App.Env)
 	log.Fatal(app.Listen(":" + cfg.App.Port))
-}
-
-// InitializeDatabase ensures the database has the required structure
-func initializeDatastore(storage *badger.Storage) error {
-	// Check if project:keys exists, if not create it
-	err := storage.Set("init", []byte("1"), 0)
-	if err != nil {
-		return err
-	}
-	return nil
 }
