@@ -30,18 +30,16 @@ func (s *DefaultProjectService) GetProjects() ([]domain.Project, error) {
 
 	keys, err := s.storage.Get("project:keys")
 	if err != nil {
-		if err.Error() == "key not found" {
-			emptyKeys, _ := json.Marshal([]string{})
-			s.storage.Set("project:keys", emptyKeys, 0)
-			return projects, nil
-		}
 		return projects, err
 	}
 
 	var projectKeys []string
 	if err := json.Unmarshal(keys, &projectKeys); err != nil {
-		emptyKeys, _ := json.Marshal([]string{})
-		s.storage.Set("project:keys", emptyKeys, 0)
+		if len(keys) == 0 {
+			emptyKeys, _ := json.Marshal([]string{})
+			s.storage.Set("project:keys", emptyKeys, 0)
+			return projects, nil
+		}
 		return projects, err
 	}
 
