@@ -11,6 +11,7 @@ import (
 
 type ProjectService interface {
 	GetProjects() ([]domain.Project, error)
+	GetProject(id string) (domain.Project, error)
 	CreateProject(project domain.Project) (domain.Project, error)
 	UpdateProject(project domain.Project) error
 	DeleteProject(id string) error
@@ -39,6 +40,8 @@ func (s *DefaultProjectService) GetProjects() ([]domain.Project, error) {
 
 	var projectKeys []string
 	if err := json.Unmarshal(keys, &projectKeys); err != nil {
+		emptyKeys, _ := json.Marshal([]string{})
+		s.storage.Set("project:keys", emptyKeys, 0)
 		return projects, err
 	}
 
@@ -56,6 +59,18 @@ func (s *DefaultProjectService) GetProjects() ([]domain.Project, error) {
 	}
 
 	return projects, nil
+}
+
+func (s *DefaultProjectService) GetProject(id string) (domain.Project, error) {
+	data, err := s.storage.Get("project:" + id)
+	if err != nil {
+		return domain.Project{}, err
+	}
+	var project domain.Project
+	if err := json.Unmarshal(data, &project); err != nil {
+		return domain.Project{}, err
+	}
+	return project, nil
 }
 
 func (s *DefaultProjectService) CreateProject(project domain.Project) (domain.Project, error) {
@@ -83,16 +98,18 @@ func (s *DefaultProjectService) CreateProject(project domain.Project) (domain.Pr
 
 	// Update project keys list
 	keys, err := s.storage.Get("project:keys")
+	var projectKeys []string
+
 	if err != nil {
-		if err.Error() != "key not found" {
+		if err.Error() == "key not found" {
+			projectKeys = []string{}
+		} else {
 			return domain.Project{}, err
 		}
-		keys = []byte("[]")
-	}
-
-	var projectKeys []string
-	if err := json.Unmarshal(keys, &projectKeys); err != nil {
-		return domain.Project{}, err
+	} else {
+		if err := json.Unmarshal(keys, &projectKeys); err != nil {
+			projectKeys = []string{}
+		}
 	}
 
 	projectKeys = append(projectKeys, project.ID)
@@ -139,7 +156,6 @@ func (s *DefaultProjectService) DeleteProject(id string) error {
 		return err
 	}
 
-	// Update project keys list
 	keys, err := s.storage.Get("project:keys")
 	if err != nil {
 		return err
@@ -150,7 +166,6 @@ func (s *DefaultProjectService) DeleteProject(id string) error {
 		return err
 	}
 
-	// Remove the deleted project ID from the list
 	newKeys := make([]string, 0, len(projectKeys))
 	for _, key := range projectKeys {
 		if key != id {
@@ -160,6 +175,10 @@ func (s *DefaultProjectService) DeleteProject(id string) error {
 
 	keysData, err := json.Marshal(newKeys)
 	if err != nil {
+		return err
+	}
+
+	if err := s.storage.Set("project:keys", keysData, 0); err != nil {
 		return err
 	}
 
