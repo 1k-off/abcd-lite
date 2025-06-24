@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/1k-off/abcd-lite/internal/server/domain"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type mockProjectService struct {
@@ -21,6 +22,13 @@ func (m *mockProjectService) CreateProject(project domain.Project) (domain.Proje
 }
 func (m *mockProjectService) UpdateProject(project domain.Project) error { return nil }
 func (m *mockProjectService) DeleteProject(id string) error              { return nil }
+func (m *mockProjectService) AddAPIKey(projectID string) (string, domain.APIKey, error) {
+	return "", domain.APIKey{}, nil
+}
+func (m *mockProjectService) RemoveAPIKey(projectID, keyID string) error { return nil }
+func (m *mockProjectService) CheckAPIKey(apiKey, hash string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(apiKey)) == nil
+}
 
 func TestIISDeploymentService_ProjectNotFound(t *testing.T) {
 	mockSvc := &mockProjectService{getErr: errors.New("not found")}
@@ -34,7 +42,7 @@ func TestIISDeploymentService_ProjectNotFound(t *testing.T) {
 }
 
 func TestIISDeploymentService_UnauthorizedAPIKey(t *testing.T) {
-	mockProj := domain.Project{ID: "p1", Name: "p1", APIKeys: []string{"key1"}, IISSites: []string{"site1"}}
+	mockProj := domain.Project{ID: "p1", Name: "p1", APIKeys: []domain.APIKey{makeTestAPIKey("key1")}, IISSites: []string{"site1"}}
 	mockSvc := &mockProjectService{project: mockProj}
 	service := &DefaultIISDeploymentService{projectService: mockSvc}
 
@@ -46,7 +54,7 @@ func TestIISDeploymentService_UnauthorizedAPIKey(t *testing.T) {
 }
 
 func TestIISDeploymentService_SiteNotFound(t *testing.T) {
-	mockProj := domain.Project{ID: "p1", APIKeys: []string{"key1"}, IISSites: []string{"site1"}}
+	mockProj := domain.Project{ID: "p1", APIKeys: []domain.APIKey{makeTestAPIKey("key1")}, IISSites: []string{"site1"}}
 	mockSvc := &mockProjectService{project: mockProj}
 	service := &DefaultIISDeploymentService{projectService: mockSvc}
 
@@ -58,7 +66,7 @@ func TestIISDeploymentService_SiteNotFound(t *testing.T) {
 }
 
 func TestIISDeploymentService_EmptyAPIKey(t *testing.T) {
-	mockProj := domain.Project{ID: "p1", Name: "p1", APIKeys: []string{"key1"}, IISSites: []string{"site1"}}
+	mockProj := domain.Project{ID: "p1", Name: "p1", APIKeys: []domain.APIKey{makeTestAPIKey("key1")}, IISSites: []string{"site1"}}
 	mockSvc := &mockProjectService{project: mockProj}
 	service := &DefaultIISDeploymentService{projectService: mockSvc}
 

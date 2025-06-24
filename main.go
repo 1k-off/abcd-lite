@@ -42,6 +42,6 @@ func main() {
 		os.Exit(0)
 	}()
 
-	app := server.NewServer(storage, cfg.App.Env)
+	app := server.NewServer(storage, cfg.App.Env, cfg.App.AllowedOrigins)
 	log.Fatal(app.Listen(":" + cfg.App.Port))
 }

@@ -12,9 +12,10 @@ type Config struct {
 }
 
 type App struct {
-	Port  string `mapstructure:"port"`
-	Env   string `mapstructure:"env"`
-	Debug bool   `mapstructure:"debug"`
+	Port           string   `mapstructure:"port"`
+	Env            string   `mapstructure:"env"`
+	Debug          bool     `mapstructure:"debug"`
+	AllowedOrigins []string `mapstructure:"allowed_origins"`
 }
 
 type Database struct {
@@ -65,6 +66,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("app.port", "8900")
 	v.SetDefault("app.env", "development")
 	v.SetDefault("app.debug", false)
+	v.SetDefault("app.allowed_origins", []string{"http://localhost:5173", "http://localhost:8900"})
 	v.SetDefault("database.path", "./data")
 	v.SetDefault("log.level", "info")
 }

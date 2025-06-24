@@ -25,7 +25,7 @@ func IISDeploy(s services.IISDeploymentService) fiber.Handler {
 				Error:   err.Error(),
 			})
 		}
-		return c.JSON(domain.DefaultErrorResponse{
+		return c.JSON(domain.DefaultInfoResponse{
 			Message: messages.MsgIISDeployed,
 		})
 	}

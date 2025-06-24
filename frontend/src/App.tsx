@@ -3,7 +3,7 @@ import { Header } from "@/components/Header"
 import { ProjectCard } from "@/components/ProjectCard"
 import { ProjectForm } from "@/components/ProjectForm"
 import { Dialog } from "@/components/Dialog"
-import { Project } from "@/types/project"
+import { Project, APIKey } from "@/types/project"
 import { getProjects, createProject, updateProject, deleteProject } from "@/services/api"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, Loader2 } from "lucide-react"
@@ -12,7 +12,7 @@ import { ThemeProvider } from "@/context/ThemeContext"
 function App() {
   const [projects, setProjects] = useState<Project[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingProject, setEditingProject] = useState<Project | undefined>()
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,7 +35,7 @@ function App() {
   }
 
   const handleAddProject = () => {
-    setEditingProject(undefined)
+    setEditingProject(null)
     setIsDialogOpen(true)
   }
 
@@ -55,25 +55,65 @@ function App() {
     }
   }
 
+  const handleApiKeyCreated = (projectId: string, apiKeyMeta: APIKey) => {
+    setProjects((prev) =>
+      prev.map((proj) =>
+        proj.id === projectId
+          ? {
+              ...proj,
+              apiKeys: [...(proj.apiKeys || []), apiKeyMeta],
+              updatedAt: new Date().toISOString(),
+            }
+          : proj
+      )
+    )
+    if (editingProject && editingProject.id === projectId) {
+      setEditingProject({
+        ...editingProject,
+        apiKeys: [...(editingProject.apiKeys || []), apiKeyMeta],
+        updatedAt: new Date().toISOString(),
+      })
+    }
+  }
+
+  const handleUpdateProject = async (id: string, data: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
+    try {
+      const updated = await updateProject(id, data)
+      setProjects((prev) =>
+        prev.map((proj) =>
+          proj.id === id
+            ? {
+                ...proj,
+                ...updated,
+                createdAt: updated.createdAt || proj.createdAt || new Date().toISOString(),
+                updatedAt: updated.updatedAt || new Date().toISOString(),
+              }
+            : proj
+        )
+      )
+      setEditingProject(null)
+      setIsDialogOpen(false)
+    } catch (err) {
+      setError("Failed to update project. Please try again later.")
+      console.error("Error updating project:", err)
+    }
+  }
+
   const handleSubmit = async (data: Omit<Project, "id" | "createdAt" | "updatedAt">) => {
     try {
       setError(null)
       if (editingProject) {
-        const updatedProject = await updateProject(editingProject.id, data)
-        setProjects((prev) =>
-          prev.map((project) =>
-            project.id === editingProject.id ? updatedProject : project
-          )
-        )
+        await handleUpdateProject(editingProject.id, data)
       } else {
         const newProject = await createProject(data)
         if (newProject && newProject.id) {
           setProjects((prev) => [...prev, newProject])
+          setIsDialogOpen(false)
+          setEditingProject(null)
         } else {
           throw new Error("Invalid project response from server")
         }
       }
-      setIsDialogOpen(false)
     } catch (err) {
       setError("Failed to save project. Please try again later.")
       console.error("Error saving project:", err)
@@ -140,9 +180,10 @@ function App() {
         }
       >
         <ProjectForm
-          project={editingProject}
+          project={editingProject ?? undefined}
           onSubmit={handleSubmit}
           onCancel={() => setIsDialogOpen(false)}
+          onApiKeyCreated={handleApiKeyCreated}
         />
       </Dialog>
     </div>

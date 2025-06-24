@@ -100,3 +100,36 @@ func DeleteProject(service services.ProjectService) fiber.Handler {
 		})
 	}
 }
+
+func AddAPIKey(service services.ProjectService) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		id := c.Params("id")
+		apiKey, apiKeyMeta, err := service.AddAPIKey(id)
+		if err != nil {
+			log.Error(err)
+			return c.Status(fiber.StatusInternalServerError).JSON(domain.DefaultErrorResponse{
+				Message: "Failed to generate API key",
+				Error:   err.Error(),
+			})
+		}
+		return c.Status(fiber.StatusCreated).JSON(domain.APIKeyResponse{
+			APIKey:     apiKey, // full key, only once
+			APIKeyMeta: apiKeyMeta,
+		})
+	}
+}
+
+func DeleteAPIKey(service services.ProjectService) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		id := c.Params("id")
+		keyId := c.Params("keyId")
+		if err := service.RemoveAPIKey(id, keyId); err != nil {
+			log.Error(err)
+			return c.Status(fiber.StatusInternalServerError).JSON(domain.DefaultErrorResponse{
+				Message: "Failed to delete API key",
+				Error:   err.Error(),
+			})
+		}
+		return c.SendStatus(fiber.StatusNoContent)
+	}
+}
