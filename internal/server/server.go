@@ -36,6 +36,10 @@ func NewServer(storage *badger.Storage, env string) *fiber.App {
 	app.Get("/healthz", healthcheck.NewHealthChecker())
 
 	projectService := services.NewProjectService(storage)
+	iisDeploymentService := services.NewIISDeploymentService(projectService)
+
+	deploy := app.Group("/deploy")
+	deploy.Post("/iis", handlers.IISDeploy(iisDeploymentService))
 
 	api := app.Group("/api")
 	projects := api.Group("/projects")
