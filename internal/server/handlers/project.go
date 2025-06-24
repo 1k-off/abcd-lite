@@ -13,9 +13,9 @@ func GetProjects(service services.ProjectService) fiber.Handler {
 		projects, err := service.GetProjects()
 		if err != nil {
 			log.Error(err)
-			return c.Status(fiber.StatusInternalServerError).JSON(domain.ProjectsErrorResponse{
-				Error:     messages.ErrFailedToGetProjects,
-				ErrorFull: err,
+			return c.Status(fiber.StatusInternalServerError).JSON(domain.DefaultErrorResponse{
+				Message: messages.ErrFailedToGetProjects,
+				Error:   err.Error(),
 			})
 		}
 		return c.JSON(domain.ProjectsResponse{
@@ -30,17 +30,17 @@ func CreateProject(service services.ProjectService) fiber.Handler {
 		log.Debug("Called CreateProject with body: ", string(c.Body()))
 		if err := c.Bind().Body(project); err != nil {
 			log.Error(err)
-			return c.Status(fiber.StatusBadRequest).JSON(domain.ProjectsErrorResponse{
-				Error:     messages.ErrInvalidRequestBody,
-				ErrorFull: err,
+			return c.Status(fiber.StatusBadRequest).JSON(domain.DefaultErrorResponse{
+				Message: messages.ErrInvalidRequestBody,
+				Error:   err.Error(),
 			})
 		}
 		createdProject, err := service.CreateProject(*project)
 		if err != nil {
 			log.Error(err)
-			return c.Status(fiber.StatusInternalServerError).JSON(domain.ProjectsErrorResponse{
-				Error:     messages.ErrFailedToCreateProject,
-				ErrorFull: err,
+			return c.Status(fiber.StatusInternalServerError).JSON(domain.DefaultErrorResponse{
+				Message: messages.ErrFailedToCreateProject,
+				Error:   err.Error(),
 			})
 		}
 		log.Info("Created project: ", createdProject.Name)
@@ -56,17 +56,17 @@ func UpdateProject(service services.ProjectService) fiber.Handler {
 		project := new(domain.Project)
 		if err := c.Bind().Body(project); err != nil {
 			log.Error(err)
-			return c.Status(fiber.StatusBadRequest).JSON(domain.ProjectsErrorResponse{
-				Error:     messages.ErrInvalidRequestBody,
-				ErrorFull: err,
+			return c.Status(fiber.StatusBadRequest).JSON(domain.DefaultErrorResponse{
+				Message: messages.ErrInvalidRequestBody,
+				Error:   err.Error(),
 			})
 		}
 		project.ID = id
 		if err := service.UpdateProject(*project); err != nil {
 			log.Error(err)
-			return c.Status(fiber.StatusInternalServerError).JSON(domain.ProjectsErrorResponse{
-				Error:     messages.ErrFailedToUpdateProject,
-				ErrorFull: err,
+			return c.Status(fiber.StatusInternalServerError).JSON(domain.DefaultErrorResponse{
+				Message: messages.ErrFailedToUpdateProject,
+				Error:   err.Error(),
 			})
 		}
 		log.Info("Updated project: ", project.Name)
@@ -82,20 +82,20 @@ func DeleteProject(service services.ProjectService) fiber.Handler {
 		project, err := service.GetProject(id)
 		if err != nil {
 			log.Error(err)
-			return c.Status(fiber.StatusInternalServerError).JSON(domain.ProjectsErrorResponse{
-				Error:     messages.ErrFailedToGetProject,
-				ErrorFull: err,
+			return c.Status(fiber.StatusInternalServerError).JSON(domain.DefaultErrorResponse{
+				Message: messages.ErrFailedToGetProject,
+				Error:   err.Error(),
 			})
 		}
 		if err := service.DeleteProject(id); err != nil {
 			log.Error(err)
-			return c.Status(fiber.StatusInternalServerError).JSON(domain.ProjectsErrorResponse{
-				Error:     messages.ErrFailedToDeleteProject,
-				ErrorFull: err,
+			return c.Status(fiber.StatusInternalServerError).JSON(domain.DefaultErrorResponse{
+				Message: messages.ErrFailedToDeleteProject,
+				Error:   err.Error(),
 			})
 		}
 		log.Info("Deleted project: ", project.Name)
-		return c.Status(fiber.StatusOK).JSON(domain.ProjectInfoResponse{
+		return c.Status(fiber.StatusOK).JSON(domain.DefaultErrorResponse{
 			Message: messages.MsgProjectDeleted,
 		})
 	}

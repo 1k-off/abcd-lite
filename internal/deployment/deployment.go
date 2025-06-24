@@ -70,7 +70,6 @@ func Deploy(o Options, info PackageInfo) error {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		log.Debug(cmd.String())
 		log.Debug(stdout.String())
 		log.Debug(stderr.String())
 

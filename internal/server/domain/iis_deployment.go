@@ -11,8 +11,3 @@ type IIS struct {
 	Exclude                 []string    `json:"exclude"`
 	PackageInfo             PackageInfo `json:"package_info"`
 }
-
-type IISErrorResponse struct {
-	Error     string `json:"error"`
-	ErrorFull error  `json:"errorFull"`
-}

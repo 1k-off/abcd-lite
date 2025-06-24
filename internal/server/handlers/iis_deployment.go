@@ -13,19 +13,19 @@ func IISDeploy(s services.IISDeploymentService) fiber.Handler {
 		iis := new(domain.IIS)
 		if err := c.Bind().Body(iis); err != nil {
 			log.Error(err)
-			return c.Status(fiber.StatusBadRequest).JSON(domain.IISErrorResponse{
-				Error:     messages.ErrInvalidRequestBody,
-				ErrorFull: err,
+			return c.Status(fiber.StatusBadRequest).JSON(domain.DefaultErrorResponse{
+				Message: messages.ErrInvalidRequestBody,
+				Error:   err.Error(),
 			})
 		}
 		if err := s.Deploy(*iis); err != nil {
 			log.Error(err)
-			return c.Status(fiber.StatusInternalServerError).JSON(domain.IISErrorResponse{
-				Error:     messages.ErrFailedToDeployIIS,
-				ErrorFull: err,
+			return c.Status(fiber.StatusInternalServerError).JSON(domain.DefaultErrorResponse{
+				Message: messages.ErrFailedToDeployIIS,
+				Error:   err.Error(),
 			})
 		}
-		return c.JSON(domain.ProjectInfoResponse{
+		return c.JSON(domain.DefaultErrorResponse{
 			Message: messages.MsgIISDeployed,
 		})
 	}
