@@ -198,7 +198,7 @@ func TestDeleteProject_NotFound(t *testing.T) {
 func TestDeleteProject_KeysNotFound(t *testing.T) {
 	service := NewProjectService(createTestStorage("TestDeleteProject_KeysNotFound"))
 	defer cleanupTestStorage(service.storage)
-	project := domain.Project{Name: "Test Project"}
+	project := domain.Project{}
 
 	err := service.DeleteProject(project.ID)
 
