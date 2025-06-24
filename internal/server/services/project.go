@@ -1,12 +1,15 @@
 package services
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"time"
 
 	"github.com/1k-off/abcd-lite/internal/server/domain"
 	"github.com/gofiber/storage/badger/v2"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type ProjectService interface {
@@ -15,6 +18,9 @@ type ProjectService interface {
 	CreateProject(project domain.Project) (domain.Project, error)
 	UpdateProject(project domain.Project) error
 	DeleteProject(id string) error
+	AddAPIKey(projectID string) (string, domain.APIKey, error)
+	CheckAPIKey(apiKey, hash string) bool
+	RemoveAPIKey(projectID, keyID string) error
 }
 
 type DefaultProjectService struct {
@@ -77,7 +83,7 @@ func (s *DefaultProjectService) CreateProject(project domain.Project) (domain.Pr
 		project.IISSites = make([]string, 0)
 	}
 	if project.APIKeys == nil {
-		project.APIKeys = make([]string, 0)
+		project.APIKeys = make([]domain.APIKey, 0)
 	}
 
 	// Generate ID and timestamps
@@ -181,4 +187,69 @@ func (s *DefaultProjectService) DeleteProject(id string) error {
 	}
 
 	return s.storage.Set("project:keys", keysData, 0)
+}
+
+func (s *DefaultProjectService) AddAPIKey(projectID string) (string, domain.APIKey, error) {
+	project, err := s.GetProject(projectID)
+	if err != nil {
+		return "", domain.APIKey{}, err
+	}
+	apiKey, err := generateAPIKey(20)
+	if err != nil {
+		return "", domain.APIKey{}, err
+	}
+	hash, err := hashAPIKey(apiKey)
+	if err != nil {
+		return "", domain.APIKey{}, err
+	}
+	apiKeyMeta := domain.APIKey{
+		ID:        uuid.NewString(),
+		Hash:      hash,
+		CreatedAt: time.Now().UTC().Format(time.RFC3339),
+		Prefix:    apiKey[:4],
+		Suffix:    apiKey[len(apiKey)-4:],
+	}
+	project.APIKeys = append(project.APIKeys, apiKeyMeta)
+	if err := s.UpdateProject(project); err != nil {
+		return "", domain.APIKey{}, err
+	}
+	return apiKey, apiKeyMeta, nil
+}
+
+// RemoveAPIKey removes an API key from a project by id
+func (s *DefaultProjectService) RemoveAPIKey(projectID, keyID string) error {
+	project, err := s.GetProject(projectID)
+	if err != nil {
+		return err
+	}
+	newKeys := make([]domain.APIKey, 0, len(project.APIKeys))
+	for _, k := range project.APIKeys {
+		if k.ID != keyID {
+			newKeys = append(newKeys, k)
+		}
+	}
+	project.APIKeys = newKeys
+	project.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+	return s.UpdateProject(project)
+}
+
+func (s *DefaultProjectService) CheckAPIKey(apiKey, hash string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(apiKey)) == nil
+}
+
+func generateAPIKey(length int) (string, error) {
+	b := make([]byte, length)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
+func hashAPIKey(apiKey string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(apiKey), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
 }

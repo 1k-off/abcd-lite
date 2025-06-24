@@ -26,7 +26,15 @@ func (s *DefaultIISDeploymentService) Deploy(iis domain.IIS) error {
 		return err
 	}
 
-	if !slices.Contains(project.APIKeys, iis.ApiKey) {
+	// Check API key using bcrypt
+	authorized := false
+	for _, key := range project.APIKeys {
+		if s.projectService.CheckAPIKey(iis.ApiKey, key.Hash) {
+			authorized = true
+			break
+		}
+	}
+	if !authorized {
 		return fmt.Errorf("unauthorized deployment to project %s", project.Name)
 	}
 

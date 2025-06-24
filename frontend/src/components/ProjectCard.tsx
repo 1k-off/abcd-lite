@@ -59,8 +59,9 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
           {project.apiKeys?.length > 0 ? (
             <ul className="space-y-1">
               {project.apiKeys.map((key, index) => (
-                <li key={`${project.id}-api-${key}-${index}`} className="text-sm text-muted-foreground">
-                  {key}
+                <li key={`${project.id}-api-${key.hash}-${index}`} className="text-sm text-muted-foreground font-mono">
+                  {key.prefix + '****' + key.suffix}
+                  <span className="ml-2 text-xs text-muted-foreground">({new Date(key.createdAt).toLocaleString()})</span>
                 </li>
               ))}
             </ul>

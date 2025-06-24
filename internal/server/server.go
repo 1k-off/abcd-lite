@@ -5,6 +5,7 @@ import (
 	"github.com/1k-off/abcd-lite/internal/server/services"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/favicon"
 	"github.com/gofiber/fiber/v3/middleware/healthcheck"
 	"github.com/gofiber/fiber/v3/middleware/recover"
@@ -13,13 +14,17 @@ import (
 )
 
 // NewServer creates a new Fiber app and sets up the routes.
-func NewServer(storage *badger.Storage, env string) *fiber.App {
+func NewServer(storage *badger.Storage, env string, allowedOrigins []string) *fiber.App {
 	app := fiber.New(fiber.Config{
 		CaseSensitive: true,
 		ServerHeader:  "abcd-lite",
 		BodyLimit:     5 * 1024 * 1024 * 1024,
 	})
 	app.Use(recover.New())
+
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: allowedOrigins,
+	}))
 
 	if env == "production" {
 		app.Get("/*", static.New("./frontend/dist"))
@@ -47,6 +52,8 @@ func NewServer(storage *badger.Storage, env string) *fiber.App {
 	projects.Post("/", handlers.CreateProject(projectService))
 	projects.Put("/:id", handlers.UpdateProject(projectService))
 	projects.Delete("/:id", handlers.DeleteProject(projectService))
+	projects.Post("/:id/api-keys", handlers.AddAPIKey(projectService))
+	projects.Delete("/:id/api-keys/:keyId", handlers.DeleteAPIKey(projectService))
 
 	return app
 }
