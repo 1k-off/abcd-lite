@@ -12,6 +12,7 @@ type Config struct {
 }
 
 type App struct {
+	AdminToken     string   `mapstructure:"admin_token"`
 	Port           string   `mapstructure:"port"`
 	Env            string   `mapstructure:"env"`
 	Debug          bool     `mapstructure:"debug"`
