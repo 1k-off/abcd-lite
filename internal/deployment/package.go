@@ -1,38 +1,28 @@
 package deployment
 
 type Credentials struct {
-	Username    string
-	Password    string
-	LoginServer string
+	Username string
+	Password string
 }
 
 type PackageInfo struct {
 	Credentials Credentials
-	Name        string
-	Version     string
+	PackageRef  string
 }
 
-const defaultLoginServer = "docker.io"
-
-func NewCredentials(username, password, loginServer string) Credentials {
+func NewCredentials(username, password string) Credentials {
 	if username == "" || password == "" {
 		return Credentials{}
 	}
-	if loginServer == "" {
-		loginServer = defaultLoginServer
-	}
-
 	return Credentials{
-		Username:    username,
-		Password:    password,
-		LoginServer: loginServer,
+		Username: username,
+		Password: password,
 	}
 }
 
-func NewPackageInfo(name, version string, credentials Credentials) PackageInfo {
+func NewPackageInfo(packageRef string, credentials Credentials) PackageInfo {
 	return PackageInfo{
 		Credentials: credentials,
-		Name:        name,
-		Version:     version,
+		PackageRef:  packageRef,
 	}
 }

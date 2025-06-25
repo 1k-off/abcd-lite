@@ -63,7 +63,7 @@ func (i *IIS) Deploy(p PackageInfo) error {
 		}
 	}
 
-	deploymentOptions := NewOptions(i.CleanDeployment, siteRoot, 3, i.Exclude)
+	deploymentOptions := NewOptions(i.CleanDeployment, siteRoot, i.Exclude)
 	if err := Deploy(deploymentOptions, p); err != nil {
 		return fmt.Errorf("failed to deploy: %w", err)
 	}

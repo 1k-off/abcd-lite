@@ -59,9 +59,9 @@ func TestDeploy_InvalidOptions(t *testing.T) {
 		t.Errorf("expected destination error, got %v", err)
 	}
 
-	err = Deploy(Options{Destination: "here", Concurrency: 0}, info)
-	if err == nil || !strings.Contains(err.Error(), "concurrency must be greater than 0") {
-		t.Errorf("expected concurrency error, got %v", err)
+	err = Deploy(Options{Destination: "here"}, info)
+	if err == nil || !strings.Contains(err.Error(), "oras pull failed") {
+		t.Errorf("expected oras pull failure, got %v", err)
 	}
 }
 
