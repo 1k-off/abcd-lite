@@ -42,8 +42,8 @@ func (s *DefaultIISDeploymentService) Deploy(iis domain.IIS) error {
 		return fmt.Errorf("site name %s not found in project %s", iis.SiteName, iis.ProjectId)
 	}
 
-	packageCredentials := deployment.NewCredentials(iis.PackageInfo.Credentials.Username, iis.PackageInfo.Credentials.Password, iis.PackageInfo.Credentials.LoginServer)
-	packageInfo := deployment.NewPackageInfo(iis.PackageInfo.Name, iis.PackageInfo.Version, packageCredentials)
+	packageCredentials := deployment.NewCredentials(iis.PackageInfo.Credentials.Username, iis.PackageInfo.Credentials.Password)
+	packageInfo := deployment.NewPackageInfo(iis.PackageInfo.PackageRef, packageCredentials)
 	iisDeployment := deployment.IIS{
 		SiteName:                iis.SiteName,
 		AppPoolName:             iis.AppPoolName,

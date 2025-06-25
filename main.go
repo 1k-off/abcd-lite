@@ -7,16 +7,9 @@ import (
 	"syscall"
 
 	"github.com/1k-off/abcd-lite/internal/config"
-	"github.com/1k-off/abcd-lite/internal/deps"
 	"github.com/1k-off/abcd-lite/internal/server"
 	"github.com/gofiber/storage/badger/v2"
 )
-
-func init() {
-	if err := deps.GetDependencies(); err != nil {
-		log.Fatalf("Failed to get dependencies: %v", err)
-	}
-}
 
 func main() {
 	cfg, err := config.Load()
