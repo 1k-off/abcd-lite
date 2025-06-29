@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/1k-off/abcd-lite/internal/server/handlers"
-	"github.com/1k-off/abcd-lite/internal/server/middleware"
+	jwtware "github.com/1k-off/abcd-lite/internal/server/middleware/jwt"
 	"github.com/1k-off/abcd-lite/internal/server/services"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
@@ -19,6 +19,7 @@ type Config struct {
 	Env            string
 	AllowedOrigins []string
 	AdminTokenHash string
+	JwtSecret      string
 }
 
 // NewServer creates a new Fiber app and sets up the routes.
@@ -52,7 +53,16 @@ func NewServer(c Config) *fiber.App {
 	deploy := app.Group("/deploy")
 	deploy.Post("/iis", handlers.IISDeploy(iisDeploymentService))
 
-	api := app.Group("/api", middleware.Auth(c.AdminTokenHash))
+	jwtConfig := jwtware.Config{
+		SigningKey: jwtware.SigningKey{
+			JWTAlg: jwtware.HS256,
+			Key:    []byte(c.JwtSecret),
+		},
+	}
+
+	app.Post("/login", handlers.Login(c.AdminTokenHash, c.JwtSecret))
+
+	api := app.Group("/api", jwtware.New(jwtConfig))
 
 	projects := api.Group("/projects")
 	projects.Get("/", handlers.GetProjects(projectService))
