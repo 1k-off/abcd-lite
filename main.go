@@ -40,6 +40,7 @@ func main() {
 		Env:            cfg.App.Env,
 		AllowedOrigins: cfg.App.AllowedOrigins,
 		AdminTokenHash: cfg.App.AdminToken,
+		JwtSecret:      cfg.App.JwtSecret,
 	})
 	log.Fatal(app.Listen(":" + cfg.App.Port))
 }

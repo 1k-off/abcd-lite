@@ -9,9 +9,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func Login(adminTokenHash, jwtSecret string) fiber.Handler {
+func Login(adminTokenHash, jwtSecret, env string) fiber.Handler {
 	return func(c fiber.Ctx) error {
-
 		var req domain.LoginRequest
 		if err := c.Bind().Body(&req); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(domain.DefaultErrorResponse{
@@ -37,8 +36,44 @@ func Login(adminTokenHash, jwtSecret string) fiber.Handler {
 				Error:   err.Error(),
 			})
 		}
-		return c.JSON(domain.LoginResponse{
-			Token: tokenStr,
+		secure := true
+		if env != "production" {
+			secure = false
+		}
+		c.Cookie(&fiber.Cookie{
+			Name:     "jwt",
+			Value:    tokenStr,
+			Expires:  time.Now().Add(24 * time.Hour),
+			HTTPOnly: true,
+			Secure:   secure,
+			SameSite: fiber.CookieSameSiteStrictMode,
+			Path:     "/",
 		})
+
+		if c.Accepts("json") == "json" {
+			return c.Status(fiber.StatusOK).JSON(domain.LoginResponse{
+				Token: tokenStr,
+			})
+		}
+		return c.SendStatus(fiber.StatusNoContent)
+	}
+}
+
+func Logout(env string) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		secure := true
+		if env != "production" {
+			secure = false
+		}
+		c.Cookie(&fiber.Cookie{
+			Name:     "jwt",
+			Value:    "",
+			Expires:  time.Now().Add(-1 * time.Hour),
+			HTTPOnly: true,
+			Secure:   secure,
+			SameSite: fiber.CookieSameSiteStrictMode,
+			Path:     "/",
+		})
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Logged out"})
 	}
 }

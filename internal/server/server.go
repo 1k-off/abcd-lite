@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/1k-off/abcd-lite/internal/server/domain"
 	"github.com/1k-off/abcd-lite/internal/server/handlers"
 	jwtware "github.com/1k-off/abcd-lite/internal/server/middleware/jwt"
 	"github.com/1k-off/abcd-lite/internal/server/services"
@@ -31,7 +32,8 @@ func NewServer(c Config) *fiber.App {
 	app.Use(recover.New())
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: c.AllowedOrigins,
+		AllowOrigins:     c.AllowedOrigins,
+		AllowCredentials: true,
 	}))
 
 	if c.Env == "production" {
@@ -58,9 +60,18 @@ func NewServer(c Config) *fiber.App {
 			JWTAlg: jwtware.HS256,
 			Key:    []byte(c.JwtSecret),
 		},
+		TokenLookup: "cookie:jwt,header:Authorization",
+		AuthScheme:  "Bearer",
+		ErrorHandler: func(ctx fiber.Ctx, err error) error {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(domain.DefaultErrorResponse{
+				Message: "Unauthorized",
+				Error:   err.Error(),
+			})
+		},
 	}
 
-	app.Post("/login", handlers.Login(c.AdminTokenHash, c.JwtSecret))
+	app.Post("/login", handlers.Login(c.AdminTokenHash, c.JwtSecret, c.Env))
+	app.Post("/logout", handlers.Logout(c.Env))
 
 	api := app.Group("/api", jwtware.New(jwtConfig))
 

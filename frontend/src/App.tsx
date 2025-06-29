@@ -8,29 +8,29 @@ import { getProjects, createProject, updateProject, deleteProject } from "@/serv
 import { Button } from "@/components/ui/button"
 import { AlertCircle, Loader2 } from "lucide-react"
 import { ThemeProvider } from "@/context/ThemeContext"
+import { AuthProvider, useAuth } from "@/context/AuthContext"
+import { AuthForm } from "@/components/AuthForm"
 
-function App() {
+function AppContent() {
+  const { isAuthenticated, logout, loading } = useAuth()
   const [projects, setProjects] = useState<Project[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchProjects()
-  }, [])
+    if (isAuthenticated) {
+      fetchProjects()
+    }
+  }, [isAuthenticated])
 
   const fetchProjects = async () => {
     try {
-      setIsLoading(true)
       setError(null)
       const data = await getProjects()
       setProjects(data)
     } catch (err) {
-      setError("Failed to load projects. Please try again later.")
-      console.error("Error fetching projects:", err)
-    } finally {
-      setIsLoading(false)
+      await logout()
     }
   }
 
@@ -120,7 +120,7 @@ function App() {
     }
   }
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -128,9 +128,14 @@ function App() {
     )
   }
 
+  if (!isAuthenticated) {
+    return <AuthForm />
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header onAddProject={handleAddProject} />
+      <button onClick={logout} className="absolute top-4 right-4 z-50 bg-secondary px-4 py-2 rounded shadow">Logout</button>
       <main className="container mx-auto py-8 px-4">
         {error && (
           <div className="mb-6 p-4 bg-destructive/10 border border-destructive rounded-lg flex items-center gap-2 text-destructive">
@@ -193,7 +198,9 @@ function App() {
 export default function AppWithProviders() {
   return (
     <ThemeProvider>
-      <App />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </ThemeProvider>
   )
 }
