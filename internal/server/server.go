@@ -6,24 +6,29 @@ import (
 	"github.com/1k-off/abcd-lite/internal/config"
 	"github.com/1k-off/abcd-lite/internal/server/domain"
 	"github.com/1k-off/abcd-lite/internal/server/handlers"
+	"github.com/1k-off/abcd-lite/internal/server/middleware"
 	jwtware "github.com/1k-off/abcd-lite/internal/server/middleware/jwt"
 	"github.com/1k-off/abcd-lite/internal/server/services"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/healthcheck"
+	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/gofiber/storage/badger/v2"
+	"github.com/oschwald/geoip2-golang"
 )
 
 type Config struct {
-	Storage        *badger.Storage
-	Env            string
-	AllowedOrigins []string
-	AdminTokenHash string
-	JwtSecret      string
-	StaticFS       fs.FS
+	Storage         *badger.Storage
+	Env             string
+	AllowedOrigins  []string
+	AdminTokenHash  string
+	JwtSecret       string
+	StaticFS        fs.FS
+	GeoIPDB         *geoip2.Reader
+	DeniedCountries map[string]bool
 }
 
 // NewServer creates a new Fiber app and sets up the routes.
@@ -33,10 +38,17 @@ func NewServer(cfg Config) *fiber.App {
 		ServerHeader:  "abcd-lite",
 	})
 
+	app.Use(middleware.CountryBlockMiddleware(cfg.GeoIPDB, cfg.DeniedCountries))
+
 	projectService := services.NewProjectService(cfg.Storage)
 	iisDeploymentService := services.NewIISDeploymentService(projectService)
 
 	app.Use(recover.New())
+	app.Use(logger.New(logger.Config{
+		Next: func(c fiber.Ctx) bool {
+			return c.Path() == "/api/auth/status"
+		},
+	}))
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     cfg.AllowedOrigins,

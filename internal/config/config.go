@@ -2,15 +2,16 @@ package config
 
 import (
 	"fmt"
+	"io/fs"
 
 	"github.com/gofiber/fiber/v3/log"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	App      App      `mapstructure:"app"`
-	Database Database `mapstructure:"database"`
-	Log      Log      `mapstructure:"log"`
+	App      App `mapstructure:"app"`
+	Database Database
+	Log      Log `mapstructure:"log"`
 }
 
 type App struct {
@@ -23,7 +24,8 @@ type App struct {
 }
 
 type Database struct {
-	Path string `mapstructure:"path"`
+	Path    string
+	GeoIPFS fs.FS
 }
 
 type Log struct {

@@ -18,6 +18,9 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	cfg.Database.GeoIPFS = embeddedGeoIPFS
+	cfg.CheckServerCountryBlock()
+
 	storage := badger.New(badger.Config{
 		Database: cfg.Database.Path + "/abcd.db",
 		Reset:    false,
@@ -39,12 +42,14 @@ func main() {
 	}
 
 	app := server.NewServer(server.Config{
-		Storage:        storage,
-		Env:            cfg.App.Env,
-		AllowedOrigins: cfg.App.AllowedOrigins,
-		AdminTokenHash: cfg.App.AdminToken,
-		JwtSecret:      cfg.App.JwtSecret,
-		StaticFS:       staticFS,
+		Storage:         storage,
+		Env:             cfg.App.Env,
+		AllowedOrigins:  cfg.App.AllowedOrigins,
+		AdminTokenHash:  cfg.App.AdminToken,
+		JwtSecret:       cfg.App.JwtSecret,
+		StaticFS:        staticFS,
+		GeoIPDB:         cfg.GetGeoIPDB(),
+		DeniedCountries: config.DeniedCountries,
 	})
 	log.Fatal(app.Listen(":" + cfg.App.Port))
 }
