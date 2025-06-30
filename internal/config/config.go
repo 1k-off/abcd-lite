@@ -1,14 +1,17 @@
 package config
 
 import (
+	"fmt"
+	"io/fs"
+
 	"github.com/gofiber/fiber/v3/log"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	App      App      `mapstructure:"app"`
-	Database Database `mapstructure:"database"`
-	Log      Log      `mapstructure:"log"`
+	App      App `mapstructure:"app"`
+	Database Database
+	Log      Log `mapstructure:"log"`
 }
 
 type App struct {
@@ -21,12 +24,18 @@ type App struct {
 }
 
 type Database struct {
-	Path string `mapstructure:"path"`
+	Path    string
+	GeoIPFS fs.FS
 }
 
 type Log struct {
 	Level string `mapstructure:"level"`
 }
+
+const (
+	AppEnvProduction  = "production"
+	AppEnvDevelopment = "development"
+)
 
 // Load loads the configuration from file and environment variables
 func Load() (*Config, error) {
@@ -61,6 +70,10 @@ func Load() (*Config, error) {
 		log.SetLevel(log.LevelDebug)
 	}
 
+	if err := validateEnv(config.App.Env); err != nil {
+		return nil, err
+	}
+
 	return config, nil
 }
 
@@ -87,4 +100,11 @@ func getLogLevel(level string) log.Level {
 		return log.LevelFatal
 	}
 	return log.LevelInfo
+}
+
+func validateEnv(env string) error {
+	if env != AppEnvProduction && env != AppEnvDevelopment {
+		return fmt.Errorf("invalid environment: %s", env)
+	}
+	return nil
 }
