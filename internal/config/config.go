@@ -42,7 +42,7 @@ func Load() (*Config, error) {
 	v := viper.New()
 
 	// Set default values
-	setDefaults(v)
+	SetDefaults(v)
 
 	// Read config file
 	v.SetConfigName("config")
@@ -77,7 +77,7 @@ func Load() (*Config, error) {
 	return config, nil
 }
 
-func setDefaults(v *viper.Viper) {
+func SetDefaults(v *viper.Viper) {
 	v.SetDefault("app.port", "8900")
 	v.SetDefault("app.env", "production")
 	v.SetDefault("app.debug", false)
