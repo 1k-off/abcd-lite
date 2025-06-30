@@ -7,6 +7,7 @@ import { Plus, X } from "lucide-react"
 import { useState, useEffect } from "react"
 import { generateApiKey, deleteApiKey } from "@/services/api"
 import { Dialog } from "@/components/Dialog"
+import { ErrorAlert } from "@/components/ErrorAlert"
 
 interface ProjectFormProps {
   project?: Project
@@ -181,7 +182,7 @@ export function ProjectForm({ project, onSubmit, onCancel, onApiKeyCreated }: Pr
             </div>
             {formData.apiKeys.length === 0 && <div className="text-muted-foreground">No API keys yet.</div>}
             <ul className="space-y-1">
-              {formData.apiKeys.map((key) => (
+              {formData.apiKeys.map((key: APIKey) => (
                 <li key={key.id} className="font-mono bg-muted rounded px-2 py-1 text-sm flex items-center justify-between">
                   <span>
                     {key.prefix + "****" + key.suffix}
@@ -204,7 +205,7 @@ export function ProjectForm({ project, onSubmit, onCancel, onApiKeyCreated }: Pr
               ))}
             </ul>
           </div>
-          {error && <div className="text-destructive text-sm mt-2">{error}</div>}
+          <ErrorAlert error={error} onDismiss={() => setError(null)} />
         </CardContent>
         <CardFooter className="flex justify-end space-x-3">
           <Button type="button" variant="outline" onClick={onCancel}>

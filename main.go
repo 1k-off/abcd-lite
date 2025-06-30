@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/fs"
 	"log"
 	"os"
 	"os/signal"
@@ -22,8 +23,6 @@ func main() {
 		Reset:    false,
 	})
 
-	// ctx, cancel := context.WithCancel(context.Background())
-
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
@@ -31,9 +30,13 @@ func main() {
 		<-sigChan
 		log.Println("Shutting down...")
 		storage.Close()
-		// cancel()
 		os.Exit(0)
 	}()
+
+	var staticFS fs.FS
+	if cfg.App.Env == config.AppEnvProduction {
+		staticFS, _ = fs.Sub(embeddedFrontendFS, "frontend/dist")
+	}
 
 	app := server.NewServer(server.Config{
 		Storage:        storage,
@@ -41,6 +44,7 @@ func main() {
 		AllowedOrigins: cfg.App.AllowedOrigins,
 		AdminTokenHash: cfg.App.AdminToken,
 		JwtSecret:      cfg.App.JwtSecret,
+		StaticFS:       staticFS,
 	})
 	log.Fatal(app.Listen(":" + cfg.App.Port))
 }

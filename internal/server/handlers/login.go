@@ -77,3 +77,29 @@ func Logout(env string) fiber.Handler {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Logged out"})
 	}
 }
+
+func AuthStatus(jwtSecret string) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		var tokenStr string
+		if cookie := c.Cookies("jwt"); cookie != "" {
+			tokenStr = cookie
+		} else if auth := c.Get("Authorization"); auth != "" {
+			if len(auth) > 7 && auth[:7] == "Bearer " {
+				tokenStr = auth[7:]
+			}
+		}
+		if tokenStr == "" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"authenticated": false})
+		}
+		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fiber.NewError(fiber.StatusUnauthorized, "Unexpected signing method")
+			}
+			return []byte(jwtSecret), nil
+		})
+		if err != nil || !token.Valid {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"authenticated": false})
+		}
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"authenticated": true})
+	}
+}

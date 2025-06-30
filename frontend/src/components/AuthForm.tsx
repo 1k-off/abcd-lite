@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ErrorAlert } from "@/components/ErrorAlert"
 
 export function AuthForm() {
   const { login, error, loading } = useAuth()
@@ -29,7 +30,7 @@ export function AuthForm() {
               required
               autoFocus
             />
-            {error && <div className="text-destructive text-sm">{error}</div>}
+            <ErrorAlert error={error} onDismiss={() => {}} />
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </Button>
