@@ -1,0 +1,25 @@
+version: 2
+builds:
+  - id: abcd-lite
+    binary: abcd-lite
+    tags:
+      - embed_files
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+    files:
+      - LICENSE.md
+      - README.md
+
+release:
+  prerelease: auto
