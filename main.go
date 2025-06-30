@@ -35,6 +35,12 @@ func main() {
 		os.Exit(0)
 	}()
 
-	app := server.NewServer(storage, cfg.App.Env, cfg.App.AllowedOrigins)
+	app := server.NewServer(server.Config{
+		Storage:        storage,
+		Env:            cfg.App.Env,
+		AllowedOrigins: cfg.App.AllowedOrigins,
+		AdminTokenHash: cfg.App.AdminToken,
+		JwtSecret:      cfg.App.JwtSecret,
+	})
 	log.Fatal(app.Listen(":" + cfg.App.Port))
 }

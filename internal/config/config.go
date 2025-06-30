@@ -12,6 +12,8 @@ type Config struct {
 }
 
 type App struct {
+	AdminToken     string   `mapstructure:"admin_token"`
+	JwtSecret      string   `mapstructure:"jwt_secret"`
 	Port           string   `mapstructure:"port"`
 	Env            string   `mapstructure:"env"`
 	Debug          bool     `mapstructure:"debug"`
@@ -64,7 +66,7 @@ func Load() (*Config, error) {
 
 func setDefaults(v *viper.Viper) {
 	v.SetDefault("app.port", "8900")
-	v.SetDefault("app.env", "development")
+	v.SetDefault("app.env", "production")
 	v.SetDefault("app.debug", false)
 	v.SetDefault("app.allowed_origins", []string{"http://localhost:5173", "http://localhost:8900"})
 	v.SetDefault("database.path", "./data")

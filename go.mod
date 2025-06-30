@@ -3,8 +3,11 @@ module github.com/1k-off/abcd-lite
 go 1.24.4
 
 require (
+	github.com/MicahParks/keyfunc/v2 v2.1.0
 	github.com/gofiber/fiber/v3 v3.0.0-beta.4
 	github.com/gofiber/storage/badger/v2 v2.0.1
+	github.com/gofiber/utils v1.1.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0

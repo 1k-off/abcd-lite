@@ -18,7 +18,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export async function getProjects(): Promise<Project[]> {
-  const response = await fetch(`${API_BASE_URL}/projects`)
+  const response = await fetch(`${API_BASE_URL}/projects`, { credentials: "include" })
   const data = await handleResponse<{ projects: Project[] }>(response)
   return data.projects
 }
@@ -30,6 +30,7 @@ export async function createProject(data: Omit<Project, "id" | "createdAt" | "up
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
+    credentials: "include",
   })
   const result = await handleResponse<{ project: Project }>(response)
   
@@ -52,6 +53,7 @@ export async function updateProject(id: string, data: Omit<Project, "id" | "crea
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
+    credentials: "include",
   })
   const result = await handleResponse<{ project: Project }>(response)
   return result.project
@@ -60,6 +62,7 @@ export async function updateProject(id: string, data: Omit<Project, "id" | "crea
 export async function deleteProject(id: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
     method: "DELETE",
+    credentials: "include",
   })
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: "Unknown error occurred" })) as ApiError
@@ -70,6 +73,7 @@ export async function deleteProject(id: string): Promise<void> {
 export async function generateApiKey(projectId: string): Promise<{ apiKey: string; apiKeyMeta: APIKey }> {
   const response = await fetch(`${API_BASE_URL}/projects/${projectId}/api-keys`, {
     method: "POST",
+    credentials: "include",
   })
   return handleResponse<{ apiKey: string; apiKeyMeta: APIKey }>(response)
 }
@@ -77,6 +81,7 @@ export async function generateApiKey(projectId: string): Promise<{ apiKey: strin
 export async function deleteApiKey(projectId: string, keyId: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/projects/${projectId}/api-keys/${keyId}`, {
     method: "DELETE",
+    credentials: "include",
   })
   if (!response.ok) {
     throw new Error("Failed to delete API key")

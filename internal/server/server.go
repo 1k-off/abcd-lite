@@ -1,7 +1,9 @@
 package server
 
 import (
+	"github.com/1k-off/abcd-lite/internal/server/domain"
 	"github.com/1k-off/abcd-lite/internal/server/handlers"
+	jwtware "github.com/1k-off/abcd-lite/internal/server/middleware/jwt"
 	"github.com/1k-off/abcd-lite/internal/server/services"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
@@ -13,20 +15,28 @@ import (
 	"github.com/gofiber/storage/badger/v2"
 )
 
+type Config struct {
+	Storage        *badger.Storage
+	Env            string
+	AllowedOrigins []string
+	AdminTokenHash string
+	JwtSecret      string
+}
+
 // NewServer creates a new Fiber app and sets up the routes.
-func NewServer(storage *badger.Storage, env string, allowedOrigins []string) *fiber.App {
+func NewServer(c Config) *fiber.App {
 	app := fiber.New(fiber.Config{
 		CaseSensitive: true,
 		ServerHeader:  "abcd-lite",
-		BodyLimit:     5 * 1024 * 1024 * 1024,
 	})
 	app.Use(recover.New())
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: allowedOrigins,
+		AllowOrigins:     c.AllowedOrigins,
+		AllowCredentials: true,
 	}))
 
-	if env == "production" {
+	if c.Env == "production" {
 		app.Get("/*", static.New("./frontend/dist"))
 		app.Use("/static", static.New("./frontend/dist/index.html"))
 		app.Use(favicon.New(favicon.Config{
@@ -37,16 +47,34 @@ func NewServer(storage *badger.Storage, env string, allowedOrigins []string) *fi
 	}
 
 	app.Get(healthcheck.DefaultLivenessEndpoint, healthcheck.NewHealthChecker())
-
 	app.Get("/healthz", healthcheck.NewHealthChecker())
 
-	projectService := services.NewProjectService(storage)
+	projectService := services.NewProjectService(c.Storage)
 	iisDeploymentService := services.NewIISDeploymentService(projectService)
 
 	deploy := app.Group("/deploy")
 	deploy.Post("/iis", handlers.IISDeploy(iisDeploymentService))
 
-	api := app.Group("/api")
+	jwtConfig := jwtware.Config{
+		SigningKey: jwtware.SigningKey{
+			JWTAlg: jwtware.HS256,
+			Key:    []byte(c.JwtSecret),
+		},
+		TokenLookup: "cookie:jwt,header:Authorization",
+		AuthScheme:  "Bearer",
+		ErrorHandler: func(ctx fiber.Ctx, err error) error {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(domain.DefaultErrorResponse{
+				Message: "Unauthorized",
+				Error:   err.Error(),
+			})
+		},
+	}
+
+	app.Post("/login", handlers.Login(c.AdminTokenHash, c.JwtSecret, c.Env))
+	app.Post("/logout", handlers.Logout(c.Env))
+
+	api := app.Group("/api", jwtware.New(jwtConfig))
+
 	projects := api.Group("/projects")
 	projects.Get("/", handlers.GetProjects(projectService))
 	projects.Post("/", handlers.CreateProject(projectService))
