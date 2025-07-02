@@ -34,7 +34,7 @@ func TestIISDeploymentService_ProjectNotFound(t *testing.T) {
 	mockSvc := &mockProjectService{getErr: errors.New("not found")}
 	service := &DefaultIISDeploymentService{projectService: mockSvc}
 
-	iis := domain.IIS{ProjectId: "p1", ApiKey: "key1", SiteName: "site1"}
+	iis := domain.IIS{ProjectId: "p1", DeployKey: "key1", SiteName: "site1"}
 	err := service.Deploy(iis)
 	if err == nil || err.Error() != "not found" {
 		t.Errorf("expected not found error, got %v", err)
@@ -46,7 +46,7 @@ func TestIISDeploymentService_UnauthorizedAPIKey(t *testing.T) {
 	mockSvc := &mockProjectService{project: mockProj}
 	service := &DefaultIISDeploymentService{projectService: mockSvc}
 
-	iis := domain.IIS{ProjectId: "p1", ApiKey: "badkey", SiteName: "site1"}
+	iis := domain.IIS{ProjectId: "p1", DeployKey: "badkey", SiteName: "site1"}
 	err := service.Deploy(iis)
 	if err == nil || err.Error() != "unauthorized deployment to project p1" {
 		t.Errorf("expected unauthorized error, got %v", err)
@@ -58,7 +58,7 @@ func TestIISDeploymentService_SiteNotFound(t *testing.T) {
 	mockSvc := &mockProjectService{project: mockProj}
 	service := &DefaultIISDeploymentService{projectService: mockSvc}
 
-	iis := domain.IIS{ProjectId: "p1", ApiKey: "key1", SiteName: "notfound"}
+	iis := domain.IIS{ProjectId: "p1", DeployKey: "key1", SiteName: "notfound"}
 	err := service.Deploy(iis)
 	if err == nil || err.Error() != "site name notfound not found in project p1" {
 		t.Errorf("expected site not found error, got %v", err)
@@ -70,7 +70,7 @@ func TestIISDeploymentService_EmptyAPIKey(t *testing.T) {
 	mockSvc := &mockProjectService{project: mockProj}
 	service := &DefaultIISDeploymentService{projectService: mockSvc}
 
-	iis := domain.IIS{ProjectId: "p1", ApiKey: "", SiteName: "site1"}
+	iis := domain.IIS{ProjectId: "p1", DeployKey: "", SiteName: "site1"}
 	err := service.Deploy(iis)
 	if err == nil || err.Error() != "unauthorized deployment to project p1" {
 		t.Errorf("expected unauthorized error for empty API key, got %v", err)
