@@ -29,7 +29,7 @@ func (s *DefaultIISDeploymentService) Deploy(iis domain.IIS) error {
 	// Check API key using bcrypt
 	authorized := false
 	for _, key := range project.APIKeys {
-		if s.projectService.CheckAPIKey(iis.ApiKey, key.Hash) {
+		if s.projectService.CheckAPIKey(iis.DeployKey, key.Hash) {
 			authorized = true
 			break
 		}

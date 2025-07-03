@@ -2,7 +2,7 @@ package domain
 
 type IIS struct {
 	ProjectId               string      `json:"project_id"`
-	ApiKey                  string      `json:"api_key"`
+	DeployKey               string      `json:"deploy_key"`
 	SiteName                string      `json:"site_name"`
 	AppPoolName             string      `json:"app_pool_name"`
 	StopAppPoolBeforeDeploy bool        `json:"stop_app_pool_before_deploy"`
