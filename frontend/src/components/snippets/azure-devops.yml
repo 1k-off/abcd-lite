@@ -1,0 +1,13 @@
+- task: ABCDLiteDeploy@0
+  inputs:
+    abcdlite_url: '{{ABCDLITE_URL}}'
+    package_username: '$(DockerHubUsername)'
+    package_password: '$(DockerHubToken)'
+    package_ref: '$(ArtifactRef)'
+    project_id: '{{PROJECT_ID}}'
+    deployment_token: '$(ABCDLiteDeployToken)'
+    site_name: '{{SITE_NAME}}'
+    exclude: |
+      # add your 
+      # exclusions here 
+      # one per line 
