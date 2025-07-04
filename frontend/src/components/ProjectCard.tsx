@@ -17,7 +17,7 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
 
   const handleShowSnippet = async (type: "github" | "azure" | "bash" | "powershell", site: string) => {
     if (type === "github") {
-      const res = await fetch("/src/components/snippets/github-actions.yml")
+      const res = await fetch("/snippets/github-actions.yml")
       let template = await res.text()
       template = template
         .replace(/{{ABCDLITE_URL}}/g, currentUrl)
@@ -28,7 +28,7 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
         code: template
       })
     } else if (type === "azure") {
-      const res = await fetch("/src/components/snippets/azure-devops.yml")
+      const res = await fetch("/snippets/azure-devops.yml")
       let template = await res.text()
       template = template
         .replace(/{{ABCDLITE_URL}}/g, currentUrl)
@@ -39,7 +39,7 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
         code: template
       })
     } else if (type === "bash") {
-      const res = await fetch("/src/components/snippets/generic-bash.sh")
+      const res = await fetch("/snippets/generic-bash.sh")
       let template = await res.text()
       template = template
         .replace(/{{ABCDLITE_URL}}/g, currentUrl)
@@ -49,7 +49,7 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
         .replace(/{{PACKAGE_REF}}/g, "")
       setSnippet({ type: "Generic (bash)", code: template })
     } else if (type === "powershell") {
-      const res = await fetch("/src/components/snippets/generic-powershell.ps1")
+      const res = await fetch("/snippets/generic-powershell.ps1")
       let template = await res.text()
       template = template
         .replace(/{{ABCDLITE_URL}}/g, currentUrl)
