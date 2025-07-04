@@ -67,7 +67,6 @@ func clean(destination string, exclude []string) error {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("failed to read destination: %w", err)
 		}
-		// For other errors, you may want to return or handle differently
 		return err
 	}
 	if !info.IsDir() {
