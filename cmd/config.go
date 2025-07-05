@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -18,24 +16,39 @@ var configCmd = &cobra.Command{
 	Short: "Configuration utilities",
 }
 
+const (
+	appModeDefault  = "default"
+	appModeParanoid = "paranoid"
+)
+
 func init() {
-	configCmd.AddCommand(&cobra.Command{
+	var paranoid bool
+	generateCmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate a default config file",
 		Run: func(cmd *cobra.Command, args []string) {
-			generateConfigFile()
+			generateConfigFile(paranoid)
 		},
-	})
+	}
+	generateCmd.Flags().BoolVar(&paranoid, "paranoid", false, "Use paranoid IIS web.config")
+	configCmd.AddCommand(generateCmd)
+	configCmd.AddCommand(updateCmd)
 }
 
-func generateConfigFile() {
-	adminToken := generateRandomToken(32)
+func generateConfigFile(paranoid bool) {
+	configPath := "configs/config.yml"
+	if _, err := os.Stat(configPath); err == nil {
+		fmt.Printf("Config file already exists at: %s\n", configPath)
+		fmt.Println("If you need to update it, use the 'update' command instead.")
+		return
+	}
+	adminToken := GenerateRandomToken(32)
 	hash, err := bcrypt.GenerateFromPassword([]byte(adminToken), bcrypt.DefaultCost)
 	if err != nil {
 		fmt.Println("Failed to hash admin token:", err)
 		os.Exit(1)
 	}
-	jwtSecret := generateRandomToken(32)
+	jwtSecret := GenerateRandomToken(32)
 
 	v := viper.New()
 	config.SetDefaults(v)
@@ -44,7 +57,7 @@ func generateConfigFile() {
 	v.SetConfigType("yaml")
 
 	os.MkdirAll("configs", 0o755)
-	configPath := "configs/config.yml"
+	configPath = "configs/config.yml"
 	if err := v.WriteConfigAs(configPath); err != nil {
 		fmt.Println("Failed to write config file:", err)
 		os.Exit(1)
@@ -55,13 +68,26 @@ func generateConfigFile() {
 	fmt.Println("Your generated admin token (save this securely, it will not be shown again):")
 	fmt.Println(adminToken)
 	fmt.Println(strings.Repeat("-", 60))
-}
 
-func generateRandomToken(length int) string {
-	b := make([]byte, length)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic("failed to generate random token")
+	mode := appModeDefault
+
+	os.MkdirAll("web", 0o755)
+	var srcConfig string
+	if paranoid {
+		srcConfig = "internal/config/iis/iis_paranoid.config"
+		mode = appModeParanoid
+	} else {
+		srcConfig = "internal/config/iis/iis_default.config"
+		mode = appModeDefault
 	}
-	return base64.RawURLEncoding.EncodeToString(b)[:length]
+	webConfigPath := "web/web.config"
+	port := v.GetString("app.port")
+	if port == "" {
+		port = "8900"
+	}
+	if err := RenderIISConfigTemplate(srcConfig, webConfigPath, port); err != nil {
+		fmt.Println("Failed to render IIS config:", err)
+		os.Exit(1)
+	}
+	fmt.Printf("web.config generated at: %s with mode: %s\n", webConfigPath, mode)
 }

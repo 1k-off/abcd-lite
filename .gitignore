@@ -11,7 +11,7 @@ go.work
 /bin/
 /dist/
 /configs/
-
+/web/
 # Node.js frontend
 node_modules/
 .pnpm-store/
