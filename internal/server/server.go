@@ -65,8 +65,8 @@ func NewServer(cfg Config) *fiber.App {
 		app.Use(compress.New())
 	}
 
-	app.Get(healthcheck.DefaultLivenessEndpoint, healthcheck.NewHealthChecker())
-	app.Get("/healthz", healthcheck.NewHealthChecker())
+	app.Get(healthcheck.LivenessEndpoint, healthcheck.New())
+	app.Get("/healthz", healthcheck.New())
 
 	deploy := app.Group("/deploy")
 	deploy.Post("/iis", handlers.IISDeploy(iisDeploymentService))
