@@ -10,7 +10,7 @@ A minimal, easy-to-use deployment service for IIS websites. abcd-lite is designe
 - Download and unpack latest release
 - Generate config (`./abcd-lite.exe config generate`) and store generated password.
 - Add IIS reverse-proxy configuration. Add `app.allowed_origins` to config file.
-- Start it (`./abcd-lite.exe start`). Install windows service if needed using NSSM.
+- Start it (`./abcd-lite.exe run`). Install windows service if needed using NSSM.
 - Use GitHub action, Azure DevOps action, or whatever action you need.
 
 ---

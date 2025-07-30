@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"io/fs"
 	"log"
 	"os"
@@ -13,9 +14,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var startCmd = &cobra.Command{
-	Use:   "start",
-	Short: "Start the ABCD Lite server",
+var runCmd = &cobra.Command{
+	Use:   "run",
+	Short: "Run the ABCD Lite server",
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := config.Load()
 		if err != nil {
@@ -24,6 +25,13 @@ var startCmd = &cobra.Command{
 
 		cfg.Database.GeoIPFS = embeddedData.GetGeoIPFS()
 		cfg.CheckServerCountryBlock()
+
+		limits, licenseDeactivationFunc, err := config.Limits(context.Background(), cfg.App.LicenseKey, cfg.App.LicenseKey)
+		if err != nil {
+			log.Printf("Failed to load license. Personal edition will be used. Error: %v", err)
+		}
+
+		cfg.App.DeactivationFunc = licenseDeactivationFunc
 
 		storage := badger.New(badger.Config{
 			Database: cfg.Database.Path + "/abcd.db",
@@ -36,6 +44,12 @@ var startCmd = &cobra.Command{
 		go func() {
 			<-sigChan
 			log.Println("Shutting down...")
+			if licenseDeactivationFunc != nil {
+				err := licenseDeactivationFunc()
+				if err != nil {
+					log.Printf("Failed to deactivate license. Error: %v", err)
+				}
+			}
 			storage.Close()
 			os.Exit(0)
 		}()
@@ -56,6 +70,7 @@ var startCmd = &cobra.Command{
 			StaticFS:        staticFS,
 			GeoIPDB:         cfg.GetGeoIPDB(),
 			DeniedCountries: config.DeniedCountries,
+			PackageLimits:   limits,
 		})
 		log.Fatal(app.Listen(":" + cfg.App.Port))
 	},

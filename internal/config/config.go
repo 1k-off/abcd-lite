@@ -15,12 +15,15 @@ type Config struct {
 }
 
 type App struct {
-	AdminToken     string   `mapstructure:"admin_token"`
-	JwtSecret      string   `mapstructure:"jwt_secret"`
-	Port           string   `mapstructure:"port"`
-	Env            string   `mapstructure:"env"`
-	Debug          bool     `mapstructure:"debug"`
-	AllowedOrigins []string `mapstructure:"allowed_origins"`
+	AdminToken       string       `mapstructure:"admin_token"`
+	JwtSecret        string       `mapstructure:"jwt_secret"`
+	Port             string       `mapstructure:"port"`
+	Env              string       `mapstructure:"env"`
+	Debug            bool         `mapstructure:"debug"`
+	AllowedOrigins   []string     `mapstructure:"allowed_origins"`
+	LicenseKey       string       `mapstructure:"license_key"`
+	LicenseFile      string       `mapstructure:"license_file"`
+	DeactivationFunc func() error `mapstructure:"-"`
 }
 
 type Database struct {

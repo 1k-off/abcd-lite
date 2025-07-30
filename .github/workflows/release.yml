@@ -62,3 +62,6 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEYGEN_ACCOUNT: ${{ secrets.KEYGEN_ACCOUNT }}
+          KEYGEN_PRODUCT: ${{ secrets.KEYGEN_PRODUCT }}
+          KEYGEN_PUBLIC_KEY: ${{ secrets.KEYGEN_PUBLIC_KEY }}

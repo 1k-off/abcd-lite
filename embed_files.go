@@ -1,5 +1,5 @@
-//go:build embed_files
-// +build embed_files
+//go:build production
+// +build production
 
 package main
 
