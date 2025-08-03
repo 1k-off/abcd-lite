@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	data := embeddata.New(embeddedGeoIPFS, embeddedFrontendFS)
+	data := embeddata.New(embeddedGeoIPFS, embeddedFrontendFS, embeddedIISConfigFS)
 	cmd.SetEmbeddedData(data)
 	if err := cmd.Execute(); err != nil {
 		log.Println(err)

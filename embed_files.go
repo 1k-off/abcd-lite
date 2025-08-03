@@ -1,5 +1,5 @@
-//go:build embed_files
-// +build embed_files
+//go:build production
+// +build production
 
 package main
 
@@ -10,3 +10,6 @@ var embeddedFrontendFS embed.FS
 
 //go:embed data/geo/GeoLite2-Country.mmdb
 var embeddedGeoIPFS embed.FS
+
+//go:embed internal/config/iis/*.config
+var embeddedIISConfigFS embed.FS

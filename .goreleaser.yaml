@@ -3,7 +3,7 @@ builds:
   - id: abcd-lite
     binary: abcd-lite
     tags:
-      - embed_files
+      - production
     env:
       - CGO_ENABLED=0
     goos:
@@ -13,6 +13,11 @@ builds:
     ignore:
       - goos: windows
         goarch: arm64
+    ldflags:
+      - -s -w
+      - -X github.com/1k-off/abcd-lite/internal/config.keygenAccount={{ .Env.KEYGEN_ACCOUNT }}
+      - -X github.com/1k-off/abcd-lite/internal/config.keygenProduct={{ .Env.KEYGEN_PRODUCT }}
+      - -X github.com/1k-off/abcd-lite/internal/config.keygenPublicKey={{ .Env.KEYGEN_PUBLIC_KEY }}
 
 archives:
   - formats: [tar.gz]

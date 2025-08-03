@@ -25,7 +25,8 @@ export function useProjects({ isAuthenticated }: UseProjectsOptions) {
       const data = await getProjects()
       setProjects(data)
     } catch (err: any) {
-      setError("Failed to fetch projects.")
+      const errorMessage = err?.message || err?.error || err?.toString() || "Failed to fetch projects."
+      setError(errorMessage)
       // Do not call logout here
     } finally {
       setLoading(false)
@@ -56,7 +57,8 @@ export function useProjects({ isAuthenticated }: UseProjectsOptions) {
       await deleteProject(id)
       setProjects((prev) => prev.filter((project) => project.id !== id))
     } catch (err: any) {
-      setError("Failed to delete project. Please try again later.")
+      const errorMessage = err?.message || err?.error || err?.toString() || "Failed to delete project. Please try again later."
+      setError(errorMessage)
       // Optionally log error
     }
   }
@@ -103,7 +105,8 @@ export function useProjects({ isAuthenticated }: UseProjectsOptions) {
       setEditingProject(null)
       setIsDialogOpen(false)
     } catch (err: any) {
-      setError("Failed to update project. Please try again later.")
+      const errorMessage = err?.message || err?.error || err?.toString() || "Failed to update project. Please try again later."
+      setError(errorMessage)
     }
   }
 
@@ -123,7 +126,8 @@ export function useProjects({ isAuthenticated }: UseProjectsOptions) {
         }
       }
     } catch (err: any) {
-      setError("Failed to save project. Please try again later.")
+      const errorMessage = err?.message || err?.error || err?.toString() || "Failed to save project. Please try again later."
+      setError(errorMessage)
     }
   }
 

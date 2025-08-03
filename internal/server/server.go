@@ -29,6 +29,7 @@ type Config struct {
 	StaticFS        fs.FS
 	GeoIPDB         *geoip2.Reader
 	DeniedCountries map[string]bool
+	PackageLimits   config.PackageLimits
 }
 
 // NewServer creates a new Fiber app and sets up the routes.
@@ -40,7 +41,7 @@ func NewServer(cfg Config) *fiber.App {
 
 	app.Use(middleware.CountryBlockMiddleware(cfg.GeoIPDB, cfg.DeniedCountries))
 
-	projectService := services.NewProjectService(cfg.Storage)
+	projectService := services.NewProjectService(cfg.Storage, cfg.PackageLimits)
 	iisDeploymentService := services.NewIISDeploymentService(projectService)
 
 	app.Use(recover.New())

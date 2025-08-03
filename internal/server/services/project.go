@@ -4,8 +4,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"time"
 
+	"github.com/1k-off/abcd-lite/internal/config"
 	"github.com/1k-off/abcd-lite/internal/server/domain"
 	"github.com/gofiber/storage/badger/v2"
 	"github.com/google/uuid"
@@ -25,10 +27,11 @@ type ProjectService interface {
 
 type DefaultProjectService struct {
 	storage *badger.Storage
+	limits  config.PackageLimits
 }
 
-func NewProjectService(storage *badger.Storage) *DefaultProjectService {
-	return &DefaultProjectService{storage: storage}
+func NewProjectService(storage *badger.Storage, limits config.PackageLimits) *DefaultProjectService {
+	return &DefaultProjectService{storage: storage, limits: limits}
 }
 
 func (s *DefaultProjectService) GetProjects() ([]domain.Project, error) {
@@ -78,12 +81,30 @@ func (s *DefaultProjectService) GetProject(id string) (domain.Project, error) {
 }
 
 func (s *DefaultProjectService) CreateProject(project domain.Project) (domain.Project, error) {
+	isProjectLimitExceeded, err := s.isProjectLimitExceeded()
+	if err != nil {
+		return domain.Project{}, err
+	}
+	if isProjectLimitExceeded {
+		return domain.Project{}, errors.New("project limit exceeded")
+	}
+
 	// Initialize empty slices if they are nil
 	if project.IISSites == nil {
 		project.IISSites = make([]string, 0)
 	}
 	if project.APIKeys == nil {
 		project.APIKeys = make([]domain.APIKey, 0)
+	}
+
+	if len(project.IISSites) > 0 {
+		isWebsiteLimitExceeded, err := s.isWebsiteLimitExceeded(len(project.IISSites))
+		if err != nil {
+			return domain.Project{}, err
+		}
+		if isWebsiteLimitExceeded {
+			return domain.Project{}, errors.New("website limit exceeded")
+		}
 	}
 
 	// Generate ID and timestamps
@@ -138,6 +159,21 @@ func (s *DefaultProjectService) UpdateProject(project domain.Project) error {
 	var existingProject domain.Project
 	if err := json.Unmarshal(existingData, &existingProject); err != nil {
 		return err
+	}
+
+	if len(project.IISSites) > 0 {
+		existingSites := len(existingProject.IISSites)
+		newSites := len(project.IISSites)
+
+		if newSites > existingSites {
+			isWebsiteLimitExceeded, err := s.isWebsiteLimitExceeded(newSites - existingSites)
+			if err != nil {
+				return err
+			}
+			if isWebsiteLimitExceeded {
+				return errors.New("website limit exceeded")
+			}
+		}
 	}
 
 	project.CreatedAt = existingProject.CreatedAt
@@ -252,4 +288,31 @@ func hashAPIKey(apiKey string) (string, error) {
 		return "", err
 	}
 	return string(hash), nil
+}
+
+func (s *DefaultProjectService) isProjectLimitExceeded() (bool, error) {
+	projects, err := s.GetProjects()
+	if err != nil {
+		return false, err
+	}
+	if len(projects) >= s.limits.MaxProjects && s.limits.MaxProjects != 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (s *DefaultProjectService) isWebsiteLimitExceeded(newSites int) (bool, error) {
+	projects, err := s.GetProjects()
+	if err != nil {
+		return false, err
+	}
+	websites := 0
+	for _, project := range projects {
+		websites += len(project.IISSites)
+	}
+	websites += newSites
+	if websites > s.limits.MaxWebsites && s.limits.MaxWebsites != 0 {
+		return true, nil
+	}
+	return false, nil
 }
