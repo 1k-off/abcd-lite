@@ -84,7 +84,7 @@ func SetDefaults(v *viper.Viper) {
 	v.SetDefault("app.port", "8900")
 	v.SetDefault("app.env", "production")
 	v.SetDefault("app.debug", false)
-	v.SetDefault("app.allowed_origins", []string{"http://localhost:5173", "http://localhost:8900"})
+	v.SetDefault("app.allowed_origins", []string{"http://localhost:8900"})
 	v.SetDefault("database.path", "./data")
 	v.SetDefault("log.level", "info")
 }
