@@ -7,8 +7,10 @@ require (
 	github.com/gofiber/fiber/v3 v3.0.0-beta.5
 	github.com/gofiber/storage/badger/v2 v2.0.1
 	github.com/gofiber/utils v1.1.0
-	github.com/golang-jwt/jwt/v5 v5.2.3
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
+	github.com/keygen-sh/keygen-go/v3 v3.2.1
+	github.com/keygen-sh/machineid v1.1.1
 	github.com/oschwald/geoip2-golang v1.13.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
@@ -46,8 +48,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/keygen-sh/go-update v1.0.0 // indirect
 	github.com/keygen-sh/jsonapi-go v1.2.1 // indirect
-	github.com/keygen-sh/keygen-go/v3 v3.2.1 // indirect
-	github.com/keygen-sh/machineid v1.1.1 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
