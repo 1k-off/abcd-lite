@@ -9,14 +9,12 @@ import (
 )
 
 type Config struct {
-	App      App `mapstructure:"app"`
-	Database Database
-	Log      Log `mapstructure:"log"`
+	App      App      `mapstructure:"app"`
+	Database Database `mapstructure:"-"`
+	Log      Log      `mapstructure:"log"`
 }
 
 type App struct {
-	AdminToken       string       `mapstructure:"admin_token"`
-	JwtSecret        string       `mapstructure:"jwt_secret"`
 	Port             string       `mapstructure:"port"`
 	Env              string       `mapstructure:"env"`
 	Debug            bool         `mapstructure:"debug"`
@@ -67,17 +65,26 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
+	config.Database.Path = "./data"
+
 	log.SetLevel(getLogLevel(config.Log.Level))
 
 	if config.App.Debug {
 		log.SetLevel(log.LevelDebug)
 	}
 
-	if err := validateEnv(config.App.Env); err != nil {
+	if err := config.Validate(); err != nil {
 		return nil, err
 	}
 
 	return config, nil
+}
+
+func (c *Config) Validate() error {
+	if err := validateEnv(c.App.Env); err != nil {
+		return err
+	}
+	return nil
 }
 
 func SetDefaults(v *viper.Viper) {
@@ -85,7 +92,6 @@ func SetDefaults(v *viper.Viper) {
 	v.SetDefault("app.env", "production")
 	v.SetDefault("app.debug", false)
 	v.SetDefault("app.allowed_origins", []string{"http://localhost:8900"})
-	v.SetDefault("database.path", "./data")
 	v.SetDefault("log.level", "info")
 }
 

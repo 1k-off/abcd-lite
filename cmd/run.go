@@ -10,7 +10,6 @@ import (
 
 	"github.com/1k-off/abcd-lite/internal/config"
 	"github.com/1k-off/abcd-lite/internal/server"
-	"github.com/gofiber/storage/badger/v2"
 	"github.com/spf13/cobra"
 )
 
@@ -33,10 +32,7 @@ var runCmd = &cobra.Command{
 
 		cfg.App.DeactivationFunc = licenseDeactivationFunc
 
-		storage := badger.New(badger.Config{
-			Database: cfg.Database.Path + "/abcd.db",
-			Reset:    false,
-		})
+		storage := cfg.Storage()
 
 		sigChan := make(chan os.Signal, 1)
 		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -65,8 +61,6 @@ var runCmd = &cobra.Command{
 			Storage:         storage,
 			Env:             cfg.App.Env,
 			AllowedOrigins:  cfg.App.AllowedOrigins,
-			AdminTokenHash:  cfg.App.AdminToken,
-			JwtSecret:       cfg.App.JwtSecret,
 			StaticFS:        staticFS,
 			GeoIPDB:         cfg.GetGeoIPDB(),
 			DeniedCountries: config.DeniedCountries,

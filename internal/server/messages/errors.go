@@ -9,4 +9,8 @@ const (
 	ErrFailedToDeleteProject = "Failed to delete project"
 
 	ErrFailedToDeployIIS = "Failed to deploy IIS"
+
+	// Limit exceeded errors
+	ErrProjectLimitExceeded = "project limit exceeded"
+	ErrWebsiteLimitExceeded = "website limit exceeded"
 )

@@ -10,8 +10,8 @@ interface ApiError {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: "Unknown error occurred" })) as ApiError
-    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`)
+    const errorData = await response.json().catch(() => ({ message: "Unknown error occurred" })) as ApiError
+    throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`)
   }
 
   return response.json()
@@ -65,8 +65,8 @@ export async function deleteProject(id: string): Promise<void> {
     credentials: "include",
   })
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: "Unknown error occurred" })) as ApiError
-    throw new Error(errorData.error || `Failed to delete project: ${response.status}`)
+    const errorData = await response.json().catch(() => ({ message: "Unknown error occurred" })) as ApiError
+    throw new Error(errorData.message || errorData.error || `Failed to delete project: ${response.status}`)
   }
 }
 
@@ -84,6 +84,7 @@ export async function deleteApiKey(projectId: string, keyId: string): Promise<vo
     credentials: "include",
   })
   if (!response.ok) {
-    throw new Error("Failed to delete API key")
+    const errorData = await response.json().catch(() => ({ message: "Failed to delete API key" })) as ApiError
+    throw new Error(errorData.message || errorData.error || "Failed to delete API key")
   }
 } 
