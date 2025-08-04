@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/1k-off/abcd-lite/internal/config"
+	"github.com/1k-off/abcd-lite/internal/server/services"
+	"github.com/1k-off/abcd-lite/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
@@ -32,7 +34,6 @@ func init() {
 	}
 	generateCmd.Flags().BoolVar(&paranoid, "paranoid", false, "Use paranoid IIS web.config")
 	configCmd.AddCommand(generateCmd)
-	configCmd.AddCommand(updateCmd)
 }
 
 func generateConfigFile(paranoid bool) {
@@ -42,18 +43,16 @@ func generateConfigFile(paranoid bool) {
 		fmt.Println("If you need to update it, use the 'update' command instead.")
 		return
 	}
-	adminToken := GenerateRandomToken(32)
+	adminToken := util.GenerateRandomToken(32)
 	hash, err := bcrypt.GenerateFromPassword([]byte(adminToken), bcrypt.DefaultCost)
 	if err != nil {
 		fmt.Println("Failed to hash admin token:", err)
 		os.Exit(1)
 	}
-	jwtSecret := GenerateRandomToken(32)
+	jwtSecret := util.GenerateRandomToken(32)
 
 	v := viper.New()
 	config.SetDefaults(v)
-	v.Set("app.admin_token", string(hash))
-	v.Set("app.jwt_secret", jwtSecret)
 	v.SetConfigType("yaml")
 
 	os.MkdirAll("configs", 0o755)
@@ -63,7 +62,29 @@ func generateConfigFile(paranoid bool) {
 		os.Exit(1)
 	}
 
+	// Store admin token in datastore
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Println("Failed to load config for datastore initialization:", err)
+		os.Exit(1)
+	}
+
+	storage := cfg.Storage()
+	defer storage.Close()
+
+	settingsService := services.NewSettingsService(storage)
+	if err := settingsService.SetAdminToken(string(hash)); err != nil {
+		fmt.Println("Failed to store admin token in datastore:", err)
+		os.Exit(1)
+	}
+
+	if err := settingsService.SetJwtSecret(jwtSecret); err != nil {
+		fmt.Println("Failed to store JWT secret in datastore:", err)
+		os.Exit(1)
+	}
+
 	fmt.Println("Config file generated at:", configPath)
+	fmt.Println("Admin token and JWT secret stored in datastore")
 	fmt.Println(strings.Repeat("-", 60))
 	fmt.Println("Your generated admin token (save this securely, it will not be shown again):")
 	fmt.Println(adminToken)

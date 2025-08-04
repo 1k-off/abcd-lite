@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io/fs"
 
 	"github.com/1k-off/abcd-lite/internal/config"
@@ -9,7 +10,9 @@ import (
 	"github.com/1k-off/abcd-lite/internal/server/middleware"
 	jwtware "github.com/1k-off/abcd-lite/internal/server/middleware/jwt"
 	"github.com/1k-off/abcd-lite/internal/server/services"
+	"github.com/1k-off/abcd-lite/pkg/util"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/log"
 	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/healthcheck"
@@ -24,8 +27,6 @@ type Config struct {
 	Storage         *badger.Storage
 	Env             string
 	AllowedOrigins  []string
-	AdminTokenHash  string
-	JwtSecret       string
 	StaticFS        fs.FS
 	GeoIPDB         *geoip2.Reader
 	DeniedCountries map[string]bool
@@ -42,7 +43,24 @@ func NewServer(cfg Config) *fiber.App {
 	app.Use(middleware.CountryBlockMiddleware(cfg.GeoIPDB, cfg.DeniedCountries))
 
 	projectService := services.NewProjectService(cfg.Storage, cfg.PackageLimits)
+	settingsService := services.NewSettingsService(cfg.Storage)
 	iisDeploymentService := services.NewIISDeploymentService(projectService)
+
+	// Check if admin token is set
+	adminToken, err := settingsService.GetAdminToken()
+	if err != nil || adminToken == "" {
+		log.Fatal("Admin token is not set. Please run `abcd-lite config generate`")
+	}
+
+	// Get JWT secret from settings service
+	jwtSecret, err := settingsService.GetJwtSecret()
+	if err != nil {
+		// If JWT secret doesn't exist in datastore, generate a new one
+		jwtSecret = util.GenerateRandomToken(32)
+		if err := settingsService.SetJwtSecret(jwtSecret); err != nil {
+			panic(fmt.Sprintf("Failed to set JWT secret: %v", err))
+		}
+	}
 
 	app.Use(recover.New())
 	app.Use(logger.New(logger.Config{
@@ -75,7 +93,7 @@ func NewServer(cfg Config) *fiber.App {
 	jwtConfig := jwtware.Config{
 		SigningKey: jwtware.SigningKey{
 			JWTAlg: jwtware.HS256,
-			Key:    []byte(cfg.JwtSecret),
+			Key:    []byte(jwtSecret),
 		},
 		TokenLookup: "cookie:jwt,header:Authorization",
 		AuthScheme:  "Bearer",
@@ -87,11 +105,11 @@ func NewServer(cfg Config) *fiber.App {
 		},
 	}
 
-	app.Post("/login", handlers.Login(cfg.AdminTokenHash, cfg.JwtSecret, cfg.Env))
+	app.Post("/login", handlers.Login(settingsService, cfg.Env))
 	app.Post("/logout", handlers.Logout(cfg.Env))
 
 	api := app.Group("/api", jwtware.New(jwtConfig))
-	api.Get("/auth/status", handlers.AuthStatus(cfg.JwtSecret))
+	api.Get("/auth/status", handlers.AuthStatus(jwtSecret))
 
 	projects := api.Group("/projects")
 	projects.Get("/", handlers.GetProjects(projectService))

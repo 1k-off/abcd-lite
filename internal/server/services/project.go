@@ -9,6 +9,7 @@ import (
 
 	"github.com/1k-off/abcd-lite/internal/config"
 	"github.com/1k-off/abcd-lite/internal/server/domain"
+	"github.com/1k-off/abcd-lite/internal/server/messages"
 	"github.com/gofiber/storage/badger/v2"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -86,7 +87,7 @@ func (s *DefaultProjectService) CreateProject(project domain.Project) (domain.Pr
 		return domain.Project{}, err
 	}
 	if isProjectLimitExceeded {
-		return domain.Project{}, errors.New("project limit exceeded")
+		return domain.Project{}, errors.New(messages.ErrProjectLimitExceeded)
 	}
 
 	// Initialize empty slices if they are nil
@@ -103,7 +104,7 @@ func (s *DefaultProjectService) CreateProject(project domain.Project) (domain.Pr
 			return domain.Project{}, err
 		}
 		if isWebsiteLimitExceeded {
-			return domain.Project{}, errors.New("website limit exceeded")
+			return domain.Project{}, errors.New(messages.ErrWebsiteLimitExceeded)
 		}
 	}
 

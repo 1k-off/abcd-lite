@@ -8,6 +8,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/1k-off/abcd-lite/internal/config"
+	"github.com/1k-off/abcd-lite/internal/server/services"
+	"github.com/1k-off/abcd-lite/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
@@ -110,23 +113,30 @@ var updateWebPortCmd = &cobra.Command{
 
 var updateWebJwtSecretCmd = &cobra.Command{
 	Use:   "jwt-secret",
-	Short: "Update JWT secret in app config",
+	Short: "Update JWT secret in datastore",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		jwtSecret := GenerateRandomToken(32)
-		v := viper.New()
-		v.SetConfigFile("configs/config.yml")
-		if err := v.ReadInConfig(); err != nil {
-			return fmt.Errorf("failed to read config: %w", err)
+		jwtSecret := util.GenerateRandomToken(32)
+
+		// Initialize storage and settings service
+		cfg, err := config.Load()
+		if err != nil {
+			return fmt.Errorf("failed to load config: %w", err)
 		}
-		v.Set("app.jwt_secret", jwtSecret)
-		if err := v.WriteConfig(); err != nil {
-			return fmt.Errorf("failed to write config: %w", err)
+
+		storage := cfg.Storage()
+		defer storage.Close()
+
+		settingsService := services.NewSettingsService(storage)
+		if err := settingsService.SetJwtSecret(jwtSecret); err != nil {
+			return fmt.Errorf("failed to save JWT secret to datastore: %w", err)
 		}
+
 		fmt.Println(strings.Repeat("-", 60))
 		fmt.Println("Your new JWT secret (save this securely, it will not be shown again):")
 		fmt.Println(jwtSecret)
 		fmt.Println(strings.Repeat("-", 60))
+		fmt.Println("JWT secret updated successfully in datastore.")
 		fmt.Println("Please restart the service for changes to take effect.")
 		return nil
 	},
@@ -145,20 +155,26 @@ var updatePasswordCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to hash password: %w", err)
 		}
-		v := viper.New()
-		v.SetConfigFile("configs/config.yml")
-		if err := v.ReadInConfig(); err != nil {
-			return fmt.Errorf("failed to read config: %w", err)
+
+		// Initialize storage and settings service
+		cfg, err := config.Load()
+		if err != nil {
+			return fmt.Errorf("failed to load config: %w", err)
 		}
-		v.Set("app.admin_token", string(hash))
-		if err := v.WriteConfig(); err != nil {
-			return fmt.Errorf("failed to write config: %w", err)
+
+		storage := cfg.Storage()
+		defer storage.Close()
+
+		settingsService := services.NewSettingsService(storage)
+		if err := settingsService.SetAdminToken(string(hash)); err != nil {
+			return fmt.Errorf("failed to save admin token to datastore: %w", err)
 		}
+
 		fmt.Println(strings.Repeat("-", 60))
 		fmt.Println("Your new admin password (save this securely, it will not be shown again):")
 		fmt.Println(pw)
 		fmt.Println(strings.Repeat("-", 60))
-		fmt.Println("Please restart the service for changes to take effect.")
+		fmt.Println("Admin password updated successfully in datastore.")
 		return nil
 	},
 }
