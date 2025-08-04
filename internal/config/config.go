@@ -90,7 +90,7 @@ func (c *Config) Validate() error {
 func SetDefaults(v *viper.Viper) {
 	v.SetDefault("app.port", "8900")
 	v.SetDefault("app.env", "production")
-	v.SetDefault("app.debug", true)
+	v.SetDefault("app.debug", false)
 	v.SetDefault("app.allowed_origins", []string{"http://localhost:8900"})
 	v.SetDefault("log.level", "info")
 }
