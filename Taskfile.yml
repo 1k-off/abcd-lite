@@ -1,0 +1,10 @@
+version: '3'
+
+dotenv: ['.env']
+
+tasks:
+  default:
+    cmds:
+      - goreleaser release --snapshot --clean
+      - powershell -Command "Move-Item ./dist/abcd-lite_windows_amd64_v1/abcd-lite.exe ./"
+    silent: false

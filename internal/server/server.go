@@ -79,7 +79,7 @@ func NewServer(cfg Config) *fiber.App {
 			FS: cfg.StaticFS,
 		}))
 		app.Get("/", func(c fiber.Ctx) error {
-			return c.SendFile("frontend/dist/index.html")
+			return c.SendFile("dist/index.html")
 		})
 		app.Use(compress.New())
 	}
