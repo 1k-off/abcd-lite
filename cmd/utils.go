@@ -13,7 +13,7 @@ func RenderIISConfigTemplate(templatePath, outputPath, port string) error {
 
 	// Try to use embedded files first
 	if embeddedData != nil {
-		iisConfigFS := embeddedData.GetIISConfigFS()
+		iisConfigFS := embeddedData.IISConfigFS
 		// Extract filename from path (e.g., "internal/config/iis/iis_default.config" -> "iis_default.config")
 		filename := filepath.Base(templatePath)
 		templateContent, err := fs.ReadFile(iisConfigFS, filename)

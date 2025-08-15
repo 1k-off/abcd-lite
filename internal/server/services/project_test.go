@@ -63,6 +63,7 @@ func makeTestAPIKey(key string) domain.APIKey {
 
 func TestGetProjects_EmptyStorage(t *testing.T) {
 	service := NewProjectService(createTestStorage("TestGetProjects_EmptyStorage"), packageLimits)
+	defer cleanupTestStorage(service.storage)
 	projects, err := service.GetProjects()
 	assert.NoError(t, err)
 	assert.Empty(t, projects)

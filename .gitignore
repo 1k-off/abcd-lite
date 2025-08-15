@@ -47,7 +47,7 @@ logs/
 # Database
 *.db
 *.db-journal
-data/
+geo/*.mmdb
 
 # OS generated files
 .DS_Store

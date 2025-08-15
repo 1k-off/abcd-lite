@@ -65,7 +65,7 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
-	config.Database.Path = "./data"
+	config.Database.Path = "./"
 
 	log.SetLevel(getLogLevel(config.Log.Level))
 

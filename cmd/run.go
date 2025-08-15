@@ -22,7 +22,7 @@ var runCmd = &cobra.Command{
 			log.Fatalf("Failed to load config: %v", err)
 		}
 
-		cfg.Database.GeoIPFS = embeddedData.GetGeoIPFS()
+		cfg.Database.GeoIPFS = embeddedData.GeoIPFS
 		cfg.CheckServerCountryBlock()
 
 		limits, licenseDeactivationFunc, err := config.Limits(context.Background(), cfg.App.LicenseKey, cfg.App.LicenseKey)
@@ -52,7 +52,7 @@ var runCmd = &cobra.Command{
 
 		var staticFS fs.FS
 		if cfg.App.Env == config.AppEnvProduction {
-			staticFS, _ = fs.Sub(embeddedData.GetFrontendFS(), "frontend/dist")
+			staticFS, _ = fs.Sub(embeddedData.FrontendFS, "dist")
 		} else {
 			staticFS = os.DirFS("frontend/dist")
 		}

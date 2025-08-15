@@ -14,11 +14,11 @@ var (
 		},
 	}
 
-	embeddedData embeddata.EmbedData
+	embeddedData *embeddata.Config
 )
 
 // SetEmbeddedData allows main package to provide embedded FS data to commands
-func SetEmbeddedData(data embeddata.EmbedData) {
+func SetEmbeddedData(data *embeddata.Config) {
 	embeddedData = data
 }
 

@@ -55,7 +55,8 @@ func checkServerCountryBlock(db *geoip2.Reader) {
 // Try to open the GeoIP database from embedded FS, then from disk as fallback
 func OpenGeoIPDB(embeddedFS fs.FS, localPath string) (*geoip2.Reader, error) {
 	if embeddedFS != nil {
-		f, err := embeddedFS.Open("data/geo/GeoLite2-Country.mmdb")
+		// Try to read from embedded FS - the file is at root level since we embed it directly
+		f, err := embeddedFS.Open("GeoLite2-Country.mmdb")
 		if err == nil {
 			defer f.Close()
 			data, err := io.ReadAll(f)
