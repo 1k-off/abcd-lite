@@ -41,14 +41,14 @@ jobs:
         id: geoip-cache
         uses: actions/cache@v4
         with:
-          path: data/geo/GeoLite2-Country.mmdb
+          path: geo/GeoLite2-Country.mmdb
           key: geoip-${{ runner.os }}-${{ steps.date.outputs.date }}
 
       - name: Download GeoIP Database
         if: steps.geoip-cache.outputs.cache-hit != 'true'
         run: |
-          mkdir -p data/geo
-          cd data/geo
+          mkdir -p geo
+          cd geo
           wget --content-disposition --user=${{ secrets.MAXMIND_USERNAME }} --password=${{ secrets.MAXMIND_PASSWORD }} -O GeoLite2-Country.tar.gz 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz'
           tar -xzf GeoLite2-Country.tar.gz
           rm GeoLite2-Country.tar.gz
