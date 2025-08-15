@@ -1,10 +1,10 @@
-//go:build production
+//go:build !production
 
 package iis
 
 import "embed"
 
-//go:embed *.config
+// Empty FS for development/testing
 var configFS embed.FS
 
 func GetConfigFS() embed.FS {
