@@ -32,7 +32,10 @@ var runCmd = &cobra.Command{
 
 		cfg.App.DeactivationFunc = licenseDeactivationFunc
 
-		storage := cfg.Storage()
+		storageManager, err := cfg.GetStorage()
+		if err != nil {
+			log.Fatal("Failed to initialize storage:", err)
+		}
 
 		sigChan := make(chan os.Signal, 1)
 		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -46,7 +49,7 @@ var runCmd = &cobra.Command{
 					log.Printf("Failed to deactivate license. Error: %v", err)
 				}
 			}
-			storage.Close()
+			storageManager.Close()
 			os.Exit(0)
 		}()
 
@@ -58,7 +61,8 @@ var runCmd = &cobra.Command{
 		}
 
 		app := server.NewServer(server.Config{
-			Storage:         storage,
+			ProjectStorage:  storageManager.ProjectStorage,
+			SettingsStorage: storageManager.SettingsStorage,
 			Env:             cfg.App.Env,
 			AllowedOrigins:  cfg.App.AllowedOrigins,
 			StaticFS:        staticFS,

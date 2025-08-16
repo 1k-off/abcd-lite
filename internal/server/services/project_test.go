@@ -8,7 +8,8 @@ import (
 
 	"github.com/1k-off/abcd-lite/internal/config"
 	"github.com/1k-off/abcd-lite/internal/server/domain"
-	"github.com/gofiber/storage/badger/v2"
+	"github.com/1k-off/abcd-lite/internal/storage"
+	"github.com/1k-off/abcd-lite/internal/storage/sqlite"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,19 +33,35 @@ var (
 	}
 )
 
-func createTestStorage(testName string) *badger.Storage {
+func createTestStorage(testName string) *config.StorageManager {
 	testDir := filepath.Join(os.TempDir(), "abcd-lite-test-storage", testName)
 	os.RemoveAll(testDir)
-	storage := badger.New(badger.Config{
-		Database: testDir,
-		Reset:    true,
+
+	// Ensure the test directory exists for SQLite
+	if err := os.MkdirAll(testDir, 0755); err != nil {
+		panic(fmt.Sprintf("Failed to create test directory: %v", err))
+	}
+
+	// Create SQLite driver for testing
+	driver, err := sqlite.NewSQLiteDriver(storage.StorageConfig{
+		Type: storage.StorageTypeSQLite,
+		Path: filepath.Join(testDir, "test.db"),
 	})
-	return storage
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create test storage: %v", err))
+	}
+
+	// Create storage manager with shared driver
+	return &config.StorageManager{
+		ProjectStorage:  storage.NewGenericProjectStorage(driver),
+		SettingsStorage: storage.NewGenericSettingsStorage(driver),
+		Driver:          driver,
+	}
 }
 
-func cleanupTestStorage(storage *badger.Storage) {
-	if storage != nil {
-		storage.Close()
+func cleanupTestStorage(storageManager *config.StorageManager) {
+	if storageManager != nil {
+		storageManager.Close()
 	}
 	testDir := filepath.Join(os.TempDir(), "abcd-lite-test-storage")
 	os.RemoveAll(testDir)
@@ -62,22 +79,27 @@ func makeTestAPIKey(key string) domain.APIKey {
 }
 
 func TestGetProjects_EmptyStorage(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestGetProjects_EmptyStorage"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestGetProjects_EmptyStorage")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 	projects, err := service.GetProjects()
 	assert.NoError(t, err)
 	assert.Empty(t, projects)
 }
+
 func TestGetProject_NotFound(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestGetProject_NotFound"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestGetProject_NotFound")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 	result, err := service.GetProject("non-existent-id")
 	assert.Error(t, err)
 	assert.Equal(t, domain.Project{}, result)
 }
+
 func TestCreateProject_Success(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_Success"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_Success")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 	project := domain.Project{
 		Name:     "Test Project",
 		IISSites: []string{"site.com"},
@@ -97,8 +119,9 @@ func TestCreateProject_Success(t *testing.T) {
 }
 
 func TestCreateProject_WithNilSlices(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_WithNilSlices"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_WithNilSlices")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 	project := domain.Project{
 		Name: "Test Project",
 	}
@@ -115,8 +138,9 @@ func TestCreateProject_WithNilSlices(t *testing.T) {
 }
 
 func TestCreateProject_MultipleProjects(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_MultipleProjects"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_MultipleProjects")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 
 	project1 := domain.Project{Name: "Project 1"}
 	project2 := domain.Project{Name: "Project 2"}
@@ -133,8 +157,9 @@ func TestCreateProject_MultipleProjects(t *testing.T) {
 }
 
 func TestUpdateProject_Success(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestUpdateProject_Success"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestUpdateProject_Success")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 
 	originalProject := domain.Project{
 		Name:     "Original Name",
@@ -165,8 +190,9 @@ func TestUpdateProject_Success(t *testing.T) {
 }
 
 func TestUpdateProject_NotFound(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestUpdateProject_NotFound"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestUpdateProject_NotFound")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 	project := domain.Project{
 		ID:   "non-existent-id",
 		Name: "Test Project",
@@ -176,8 +202,9 @@ func TestUpdateProject_NotFound(t *testing.T) {
 }
 
 func TestDeleteProject_Success(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestDeleteProject_Success"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestDeleteProject_Success")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 	project1 := domain.Project{Name: "Project 1"}
 	project2 := domain.Project{Name: "Project 2"}
 	project3 := domain.Project{Name: "Project 3"}
@@ -209,15 +236,17 @@ func TestDeleteProject_Success(t *testing.T) {
 }
 
 func TestDeleteProject_NotFound(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestDeleteProject_NotFound"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestDeleteProject_NotFound")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 	err := service.DeleteProject("non-existent-id")
 	assert.Error(t, err)
 }
 
 func TestDeleteProject_KeysNotFound(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestDeleteProject_KeysNotFound"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestDeleteProject_KeysNotFound")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 	project := domain.Project{}
 
 	err := service.DeleteProject(project.ID)
@@ -226,8 +255,9 @@ func TestDeleteProject_KeysNotFound(t *testing.T) {
 }
 
 func TestAPIKeyCreationAndUniqueness(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestAPIKeyCreationAndUniqueness"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestAPIKeyCreationAndUniqueness")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 	project := domain.Project{
 		Name:    "API Key Project",
 		APIKeys: []domain.APIKey{},
@@ -258,8 +288,9 @@ func TestAPIKeyCreationAndUniqueness(t *testing.T) {
 }
 
 func TestAPIKeyDeletionByID(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestAPIKeyDeletionByID"), packageLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestAPIKeyDeletionByID")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, packageLimits)
 	project := domain.Project{
 		Name:    "API Key Delete Project",
 		APIKeys: []domain.APIKey{},
@@ -280,8 +311,9 @@ func TestAPIKeyDeletionByID(t *testing.T) {
 }
 
 func TestCreateProject_ProjectLimitExceeded(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_ProjectLimitExceeded"), personalPlanLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_ProjectLimitExceeded")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, personalPlanLimits)
 
 	// Create first project (should succeed)
 	project1 := domain.Project{Name: "Project 1"}
@@ -297,8 +329,9 @@ func TestCreateProject_ProjectLimitExceeded(t *testing.T) {
 }
 
 func TestCreateProject_WebsiteLimitExceeded(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_WebsiteLimitExceeded"), personalPlanLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_WebsiteLimitExceeded")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, personalPlanLimits)
 
 	// Create project with 6 websites (should fail - limit is 5)
 	project := domain.Project{
@@ -311,8 +344,9 @@ func TestCreateProject_WebsiteLimitExceeded(t *testing.T) {
 }
 
 func TestCreateProject_WebsiteLimitWithinBounds(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_WebsiteLimitWithinBounds"), personalPlanLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_WebsiteLimitWithinBounds")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, personalPlanLimits)
 
 	// Create project with 5 websites (should succeed - exactly at limit)
 	project := domain.Project{
@@ -326,8 +360,9 @@ func TestCreateProject_WebsiteLimitWithinBounds(t *testing.T) {
 }
 
 func TestUpdateProject_WebsiteLimitExceeded(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestUpdateProject_WebsiteLimitExceeded"), personalPlanLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestUpdateProject_WebsiteLimitExceeded")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, personalPlanLimits)
 
 	// Create project with 3 websites
 	project := domain.Project{
@@ -349,8 +384,9 @@ func TestUpdateProject_WebsiteLimitExceeded(t *testing.T) {
 }
 
 func TestUpdateProject_WebsiteLimitWithinBounds(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestUpdateProject_WebsiteLimitWithinBounds"), personalPlanLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestUpdateProject_WebsiteLimitWithinBounds")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, personalPlanLimits)
 
 	// Create project with 2 websites
 	project := domain.Project{
@@ -376,8 +412,9 @@ func TestUpdateProject_WebsiteLimitWithinBounds(t *testing.T) {
 }
 
 func TestUpdateProject_WebsiteCountUnchanged(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestUpdateProject_WebsiteCountUnchanged"), personalPlanLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestUpdateProject_WebsiteCountUnchanged")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, personalPlanLimits)
 
 	// Create project with 4 websites
 	project := domain.Project{
@@ -404,8 +441,9 @@ func TestUpdateProject_WebsiteCountUnchanged(t *testing.T) {
 }
 
 func TestUpdateProject_WebsiteCountDecreased(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestUpdateProject_WebsiteCountDecreased"), personalPlanLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestUpdateProject_WebsiteCountDecreased")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, personalPlanLimits)
 
 	// Create project with 4 websites
 	project := domain.Project{
@@ -431,8 +469,9 @@ func TestUpdateProject_WebsiteCountDecreased(t *testing.T) {
 }
 
 func TestUpdateProject_NoWebsites(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestUpdateProject_NoWebsites"), personalPlanLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestUpdateProject_NoWebsites")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, personalPlanLimits)
 
 	// Create project with 3 websites
 	project := domain.Project{
@@ -458,8 +497,9 @@ func TestUpdateProject_NoWebsites(t *testing.T) {
 }
 
 func TestCreateProject_NoWebsites(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_NoWebsites"), personalPlanLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_NoWebsites")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, personalPlanLimits)
 
 	// Create project with no websites (should succeed)
 	project := domain.Project{
@@ -473,8 +513,9 @@ func TestCreateProject_NoWebsites(t *testing.T) {
 }
 
 func TestCreateProject_AddWebsitesLater(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_AddWebsitesLater"), personalPlanLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_AddWebsitesLater")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, personalPlanLimits)
 
 	// Create project with no websites
 	project := domain.Project{
@@ -500,8 +541,9 @@ func TestCreateProject_AddWebsitesLater(t *testing.T) {
 }
 
 func TestCreateProject_AddWebsitesLaterExceedsLimit(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_AddWebsitesLaterExceedsLimit"), personalPlanLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_AddWebsitesLaterExceedsLimit")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, personalPlanLimits)
 
 	// Create project with no websites
 	project := domain.Project{
@@ -523,8 +565,9 @@ func TestCreateProject_AddWebsitesLaterExceedsLimit(t *testing.T) {
 }
 
 func TestCreateProject_UnlimitedProjects(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_UnlimitedProjects"), unlimitedLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_UnlimitedProjects")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, unlimitedLimits)
 
 	// Create multiple projects (should all succeed)
 	for i := 1; i <= 10; i++ {
@@ -544,8 +587,9 @@ func TestCreateProject_UnlimitedProjects(t *testing.T) {
 }
 
 func TestCreateProject_UnlimitedWebsites(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_UnlimitedWebsites"), unlimitedLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_UnlimitedWebsites")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, unlimitedLimits)
 
 	// Create project with many websites (should succeed)
 	project := domain.Project{
@@ -559,8 +603,9 @@ func TestCreateProject_UnlimitedWebsites(t *testing.T) {
 }
 
 func TestUpdateProject_UnlimitedWebsites(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestUpdateProject_UnlimitedWebsites"), unlimitedLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestUpdateProject_UnlimitedWebsites")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, unlimitedLimits)
 
 	// Create project with 3 websites
 	project := domain.Project{
@@ -586,8 +631,9 @@ func TestUpdateProject_UnlimitedWebsites(t *testing.T) {
 }
 
 func TestCreateProject_UnlimitedProjectsAndWebsites(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_UnlimitedProjectsAndWebsites"), unlimitedLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_UnlimitedProjectsAndWebsites")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, unlimitedLimits)
 
 	// Create multiple projects with many websites each
 	for i := 1; i <= 5; i++ {
@@ -615,8 +661,9 @@ func TestCreateProject_UnlimitedProjectsAndWebsites(t *testing.T) {
 }
 
 func TestUpdateProject_UnlimitedWebsitesSameCount(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestUpdateProject_UnlimitedWebsitesSameCount"), unlimitedLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestUpdateProject_UnlimitedWebsitesSameCount")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, unlimitedLimits)
 
 	// Create project with 5 websites
 	project := domain.Project{
@@ -643,8 +690,9 @@ func TestUpdateProject_UnlimitedWebsitesSameCount(t *testing.T) {
 }
 
 func TestCreateProject_UnlimitedNoWebsites(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestCreateProject_UnlimitedNoWebsites"), unlimitedLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_UnlimitedNoWebsites")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, unlimitedLimits)
 
 	// Create project with no websites (should succeed)
 	project := domain.Project{
@@ -658,8 +706,9 @@ func TestCreateProject_UnlimitedNoWebsites(t *testing.T) {
 }
 
 func TestUpdateProject_UnlimitedAddWebsitesLater(t *testing.T) {
-	service := NewProjectService(createTestStorage("TestUpdateProject_UnlimitedAddWebsitesLater"), unlimitedLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestUpdateProject_UnlimitedAddWebsitesLater")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, unlimitedLimits)
 
 	// Create project with no websites
 	project := domain.Project{
@@ -691,8 +740,9 @@ func TestCreateProject_UnlimitedMixedLimits(t *testing.T) {
 		MaxWebsites: 5, // Limited websites
 	}
 
-	service := NewProjectService(createTestStorage("TestCreateProject_UnlimitedMixedLimits"), mixedLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_UnlimitedMixedLimits")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, mixedLimits)
 
 	// Create multiple projects (should succeed)
 	for i := 1; i <= 3; i++ {
@@ -727,8 +777,9 @@ func TestCreateProject_LimitedProjectsUnlimitedWebsites(t *testing.T) {
 		MaxWebsites: 0, // Unlimited websites
 	}
 
-	service := NewProjectService(createTestStorage("TestCreateProject_LimitedProjectsUnlimitedWebsites"), mixedLimits)
-	defer cleanupTestStorage(service.storage)
+	storageManager := createTestStorage("TestCreateProject_LimitedProjectsUnlimitedWebsites")
+	defer cleanupTestStorage(storageManager)
+	service := NewProjectService(storageManager.ProjectStorage, mixedLimits)
 
 	// Create first project with many websites (should succeed)
 	project1 := domain.Project{

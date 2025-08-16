@@ -10,6 +10,7 @@ import (
 	"github.com/1k-off/abcd-lite/internal/server/middleware"
 	jwtware "github.com/1k-off/abcd-lite/internal/server/middleware/jwt"
 	"github.com/1k-off/abcd-lite/internal/server/services"
+	"github.com/1k-off/abcd-lite/internal/storage"
 	"github.com/1k-off/abcd-lite/pkg/util"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/log"
@@ -19,12 +20,12 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/static"
-	"github.com/gofiber/storage/badger/v2"
 	"github.com/oschwald/geoip2-golang"
 )
 
 type Config struct {
-	Storage         *badger.Storage
+	ProjectStorage  storage.ProjectStorage
+	SettingsStorage storage.SettingsStorage
 	Env             string
 	AllowedOrigins  []string
 	StaticFS        fs.FS
@@ -42,8 +43,8 @@ func NewServer(cfg Config) *fiber.App {
 
 	app.Use(middleware.CountryBlockMiddleware(cfg.GeoIPDB, cfg.DeniedCountries))
 
-	projectService := services.NewProjectService(cfg.Storage, cfg.PackageLimits)
-	settingsService := services.NewSettingsService(cfg.Storage)
+	projectService := services.NewProjectService(cfg.ProjectStorage, cfg.PackageLimits)
+	settingsService := services.NewSettingsService(cfg.SettingsStorage)
 	iisDeploymentService := services.NewIISDeploymentService(projectService)
 
 	// Check if admin token is set

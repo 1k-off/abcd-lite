@@ -10,7 +10,7 @@ import (
 	"github.com/1k-off/abcd-lite/internal/config"
 	"github.com/1k-off/abcd-lite/internal/server/domain"
 	"github.com/1k-off/abcd-lite/internal/server/messages"
-	"github.com/gofiber/storage/badger/v2"
+	"github.com/1k-off/abcd-lite/internal/storage"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -27,18 +27,18 @@ type ProjectService interface {
 }
 
 type DefaultProjectService struct {
-	storage *badger.Storage
+	storage storage.ProjectStorage
 	limits  config.PackageLimits
 }
 
-func NewProjectService(storage *badger.Storage, limits config.PackageLimits) *DefaultProjectService {
+func NewProjectService(storage storage.ProjectStorage, limits config.PackageLimits) *DefaultProjectService {
 	return &DefaultProjectService{storage: storage, limits: limits}
 }
 
 func (s *DefaultProjectService) GetProjects() ([]domain.Project, error) {
 	projects := make([]domain.Project, 0)
 
-	keys, err := s.storage.Get("project:keys")
+	keys, err := s.storage.GetProjectKeys()
 	if err != nil {
 		return projects, err
 	}
@@ -47,20 +47,15 @@ func (s *DefaultProjectService) GetProjects() ([]domain.Project, error) {
 	if err := json.Unmarshal(keys, &projectKeys); err != nil {
 		if len(keys) == 0 {
 			emptyKeys, _ := json.Marshal([]string{})
-			s.storage.Set("project:keys", emptyKeys, 0)
+			s.storage.SetProjectKeys(emptyKeys)
 			return projects, nil
 		}
 		return projects, err
 	}
 
 	for _, key := range projectKeys {
-		data, err := s.storage.Get("project:" + key)
+		project, err := s.storage.GetProject(key)
 		if err != nil {
-			continue
-		}
-
-		var project domain.Project
-		if err := json.Unmarshal(data, &project); err != nil {
 			continue
 		}
 		projects = append(projects, project)
@@ -70,15 +65,7 @@ func (s *DefaultProjectService) GetProjects() ([]domain.Project, error) {
 }
 
 func (s *DefaultProjectService) GetProject(id string) (domain.Project, error) {
-	data, err := s.storage.Get("project:" + id)
-	if err != nil {
-		return domain.Project{}, err
-	}
-	var project domain.Project
-	if err := json.Unmarshal(data, &project); err != nil {
-		return domain.Project{}, err
-	}
-	return project, nil
+	return s.storage.GetProject(id)
 }
 
 func (s *DefaultProjectService) CreateProject(project domain.Project) (domain.Project, error) {
@@ -113,52 +100,12 @@ func (s *DefaultProjectService) CreateProject(project domain.Project) (domain.Pr
 	project.CreatedAt = time.Now().Format(time.RFC3339)
 	project.UpdatedAt = project.CreatedAt
 
-	data, err := json.Marshal(project)
-	if err != nil {
-		return domain.Project{}, err
-	}
-
-	if err := s.storage.Set("project:"+project.ID, data, 0); err != nil {
-		return domain.Project{}, err
-	}
-
-	// Update project keys list
-	keys, err := s.storage.Get("project:keys")
-	var projectKeys []string
-
-	if err != nil {
-		if err.Error() == "key not found" {
-			projectKeys = []string{}
-		} else {
-			return domain.Project{}, err
-		}
-	} else {
-		if err := json.Unmarshal(keys, &projectKeys); err != nil {
-			projectKeys = []string{}
-		}
-	}
-
-	projectKeys = append(projectKeys, project.ID)
-	keysData, err := json.Marshal(projectKeys)
-	if err != nil {
-		return domain.Project{}, err
-	}
-
-	if err := s.storage.Set("project:keys", keysData, 0); err != nil {
-		return domain.Project{}, err
-	}
-
-	return project, nil
+	return s.storage.CreateProject(project)
 }
 
 func (s *DefaultProjectService) UpdateProject(project domain.Project) error {
-	existingData, err := s.storage.Get("project:" + project.ID)
+	existingProject, err := s.GetProject(project.ID)
 	if err != nil {
-		return err
-	}
-
-	var existingProject domain.Project
-	if err := json.Unmarshal(existingData, &existingProject); err != nil {
 		return err
 	}
 
@@ -180,57 +127,14 @@ func (s *DefaultProjectService) UpdateProject(project domain.Project) error {
 	project.CreatedAt = existingProject.CreatedAt
 	project.UpdatedAt = time.Now().Format(time.RFC3339)
 
-	data, err := json.Marshal(project)
-	if err != nil {
-		return err
-	}
-
-	if err := s.storage.Set("project:"+project.ID, data, 0); err != nil {
-		return err
-	}
-
-	return nil
+	return s.storage.UpdateProject(project)
 }
 
 func (s *DefaultProjectService) DeleteProject(id string) error {
-	if err := s.storage.Delete("project:" + id); err != nil {
-		return err
-	}
-
-	keys, err := s.storage.Get("project:keys")
-	if err != nil {
-		return err
-	}
-
-	var projectKeys []string
-	if err := json.Unmarshal(keys, &projectKeys); err != nil {
-		return err
-	}
-
-	newKeys := make([]string, 0, len(projectKeys))
-	for _, key := range projectKeys {
-		if key != id {
-			newKeys = append(newKeys, key)
-		}
-	}
-
-	keysData, err := json.Marshal(newKeys)
-	if err != nil {
-		return err
-	}
-
-	if err := s.storage.Set("project:keys", keysData, 0); err != nil {
-		return err
-	}
-
-	return s.storage.Set("project:keys", keysData, 0)
+	return s.storage.DeleteProject(id)
 }
 
 func (s *DefaultProjectService) AddAPIKey(projectID string) (string, domain.APIKey, error) {
-	project, err := s.GetProject(projectID)
-	if err != nil {
-		return "", domain.APIKey{}, err
-	}
 	apiKey, err := generateAPIKey(20)
 	if err != nil {
 		return "", domain.APIKey{}, err
@@ -246,28 +150,17 @@ func (s *DefaultProjectService) AddAPIKey(projectID string) (string, domain.APIK
 		Prefix:    apiKey[:4],
 		Suffix:    apiKey[len(apiKey)-4:],
 	}
-	project.APIKeys = append(project.APIKeys, apiKeyMeta)
-	if err := s.UpdateProject(project); err != nil {
+
+	if err := s.storage.AddAPIKey(projectID, apiKeyMeta); err != nil {
 		return "", domain.APIKey{}, err
 	}
+
 	return apiKey, apiKeyMeta, nil
 }
 
 // RemoveAPIKey removes an API key from a project by id
 func (s *DefaultProjectService) RemoveAPIKey(projectID, keyID string) error {
-	project, err := s.GetProject(projectID)
-	if err != nil {
-		return err
-	}
-	newKeys := make([]domain.APIKey, 0, len(project.APIKeys))
-	for _, k := range project.APIKeys {
-		if k.ID != keyID {
-			newKeys = append(newKeys, k)
-		}
-	}
-	project.APIKeys = newKeys
-	project.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
-	return s.UpdateProject(project)
+	return s.storage.RemoveAPIKey(projectID, keyID)
 }
 
 func (s *DefaultProjectService) CheckAPIKey(apiKey, hash string) bool {
