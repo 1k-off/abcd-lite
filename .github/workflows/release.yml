@@ -12,15 +12,13 @@ permissions:
 jobs:
   goreleaser:
     if: github.repository == '1k-off/abcd-lite'
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
-      - name: Set current date
-        id: date
-        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -29,6 +27,15 @@ jobs:
         id: node
         with:
           node-version: 22
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: git mingw-w64-ucrt-x86_64-gcc tar
+
+      - name: Set current date
+        id: date
+        run: echo "date=$(Get-Date -Format 'yyyy-MM-dd')" >> $env:GITHUB_OUTPUT
 
       - name: Build Frontend
         run: |
@@ -47,13 +54,14 @@ jobs:
       - name: Download GeoIP Database
         if: steps.geoip-cache.outputs.cache-hit != 'true'
         run: |
-          mkdir -p geo
-          cd geo
-          wget --content-disposition --user=${{ secrets.MAXMIND_USERNAME }} --password=${{ secrets.MAXMIND_PASSWORD }} -O GeoLite2-Country.tar.gz 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz'
+          New-Item -ItemType Directory -Force -Path geo
+          Set-Location geo
+          $credentials = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${{ secrets.MAXMIND_USERNAME }}:${{ secrets.MAXMIND_PASSWORD }}"))
+          Invoke-WebRequest -Uri "https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz" -Headers @{"Authorization"="Basic $credentials"} -OutFile "GeoLite2-Country.tar.gz"
           tar -xzf GeoLite2-Country.tar.gz
-          rm GeoLite2-Country.tar.gz
-          mv GeoLite2-Country_*/GeoLite2-Country.mmdb .
-          rm -rf GeoLite2-Country_*
+          Remove-Item GeoLite2-Country.tar.gz
+          Get-ChildItem -Directory -Name "GeoLite2-Country_*" | ForEach-Object { Copy-Item "$_\GeoLite2-Country.mmdb" . }
+          Get-ChildItem -Directory -Name "GeoLite2-Country_*" | Remove-Item -Recurse -Force
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
