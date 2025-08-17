@@ -104,8 +104,8 @@ func restoreProjects(projectService services.ProjectService, projectsPath string
 			continue
 		}
 
-		// Create or update project
-		if _, err := projectService.CreateProject(project); err != nil {
+		// Restore project with original ID
+		if _, err := projectService.RestoreProject(project); err != nil {
 			if options.SkipErrors {
 				result.FailedItems++
 				result.Errors = append(result.Errors, fmt.Sprintf("Failed to restore project %s: %v", project.ID, err))
@@ -182,8 +182,8 @@ func restoreProjectsWithLimits(
 			continue
 		}
 
-		// Create or update project
-		if _, err := projectService.CreateProject(project); err != nil {
+		// Restore project with original ID
+		if _, err := projectService.RestoreProject(project); err != nil {
 			if options.SkipErrors {
 				result.FailedItems++
 				result.Errors = append(result.Errors, fmt.Sprintf("Failed to restore project %s: %v", project.ID, err))

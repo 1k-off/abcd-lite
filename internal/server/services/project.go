@@ -19,6 +19,7 @@ type ProjectService interface {
 	GetProjects() ([]domain.Project, error)
 	GetProject(id string) (domain.Project, error)
 	CreateProject(project domain.Project) (domain.Project, error)
+	RestoreProject(project domain.Project) (domain.Project, error)
 	UpdateProject(project domain.Project) error
 	DeleteProject(id string) error
 	DeleteAllProjects() error
@@ -100,6 +101,35 @@ func (s *DefaultProjectService) CreateProject(project domain.Project) (domain.Pr
 	project.ID = uuid.New().String()
 	project.CreatedAt = time.Now().Format(time.RFC3339)
 	project.UpdatedAt = project.CreatedAt
+
+	return s.storage.CreateProject(project)
+}
+
+// RestoreProject restores a project with its original ID and timestamps
+func (s *DefaultProjectService) RestoreProject(project domain.Project) (domain.Project, error) {
+	// Check if project already exists
+	existingProject, err := s.GetProject(project.ID)
+	if err == nil {
+		return existingProject, s.UpdateProject(project)
+	}
+
+	if project.IISSites == nil {
+		project.IISSites = make([]string, 0)
+	}
+	if project.APIKeys == nil {
+		project.APIKeys = make([]domain.APIKey, 0)
+	}
+
+	// Check website limits for new sites
+	if len(project.IISSites) > 0 {
+		isWebsiteLimitExceeded, err := s.isWebsiteLimitExceeded(len(project.IISSites))
+		if err != nil {
+			return domain.Project{}, err
+		}
+		if isWebsiteLimitExceeded {
+			return domain.Project{}, errors.New(messages.ErrWebsiteLimitExceeded)
+		}
+	}
 
 	return s.storage.CreateProject(project)
 }

@@ -20,6 +20,9 @@ func (m *mockProjectService) GetProject(id string) (domain.Project, error) {
 func (m *mockProjectService) CreateProject(project domain.Project) (domain.Project, error) {
 	return domain.Project{}, nil
 }
+func (m *mockProjectService) RestoreProject(project domain.Project) (domain.Project, error) {
+	return domain.Project{}, nil
+}
 func (m *mockProjectService) UpdateProject(project domain.Project) error { return nil }
 func (m *mockProjectService) DeleteProject(id string) error              { return nil }
 func (m *mockProjectService) DeleteAllProjects() error                   { return nil }
