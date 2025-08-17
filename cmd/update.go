@@ -124,10 +124,13 @@ var updateWebJwtSecretCmd = &cobra.Command{
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 
-		storage := cfg.Storage()
-		defer storage.Close()
+		storageManager, err := cfg.GetStorage()
+		if err != nil {
+			return fmt.Errorf("failed to initialize storage: %w", err)
+		}
+		defer storageManager.Close()
 
-		settingsService := services.NewSettingsService(storage)
+		settingsService := services.NewSettingsService(storageManager.SettingsStorage)
 		if err := settingsService.SetJwtSecret(jwtSecret); err != nil {
 			return fmt.Errorf("failed to save JWT secret to datastore: %w", err)
 		}
@@ -162,10 +165,13 @@ var updatePasswordCmd = &cobra.Command{
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 
-		storage := cfg.Storage()
-		defer storage.Close()
+		storageManager, err := cfg.GetStorage()
+		if err != nil {
+			return fmt.Errorf("failed to initialize storage: %w", err)
+		}
+		defer storageManager.Close()
 
-		settingsService := services.NewSettingsService(storage)
+		settingsService := services.NewSettingsService(storageManager.SettingsStorage)
 		if err := settingsService.SetAdminToken(string(hash)); err != nil {
 			return fmt.Errorf("failed to save admin token to datastore: %w", err)
 		}

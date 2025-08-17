@@ -69,10 +69,14 @@ func generateConfigFile(paranoid bool) {
 		os.Exit(1)
 	}
 
-	storage := cfg.Storage()
-	defer storage.Close()
+	storageManager, err := cfg.GetStorage()
+	if err != nil {
+		fmt.Println("Failed to initialize storage:", err)
+		os.Exit(1)
+	}
+	defer storageManager.Close()
 
-	settingsService := services.NewSettingsService(storage)
+	settingsService := services.NewSettingsService(storageManager.SettingsStorage)
 	if err := settingsService.SetAdminToken(string(hash)); err != nil {
 		fmt.Println("Failed to store admin token in datastore:", err)
 		os.Exit(1)

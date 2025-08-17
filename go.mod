@@ -6,6 +6,7 @@ require (
 	github.com/MicahParks/keyfunc/v2 v2.1.0
 	github.com/gofiber/fiber/v3 v3.0.0-beta.5
 	github.com/gofiber/storage/badger/v2 v2.1.0
+	github.com/gofiber/storage/sqlite3 v1.3.8
 	github.com/gofiber/utils v1.1.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
@@ -50,6 +51,7 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect

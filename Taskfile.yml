@@ -8,3 +8,16 @@ tasks:
       - goreleaser release --snapshot --clean
       - powershell -Command "Move-Item ./dist/abcd-lite_windows_amd64_v1/abcd-lite.exe ./"
     silent: false
+  test:
+    cmds:
+      - go test ./...
+  run:
+    cmds:
+      - go run . run
+    silent: false
+  configgen:
+    cmds:
+      - go run . config generate
+  update-password:
+    cmds:
+      - go run . config update password

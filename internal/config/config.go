@@ -12,6 +12,7 @@ type Config struct {
 	App      App      `mapstructure:"app"`
 	Database Database `mapstructure:"-"`
 	Log      Log      `mapstructure:"log"`
+	Storage  Storage  `mapstructure:"-"`
 }
 
 type App struct {
@@ -27,6 +28,11 @@ type App struct {
 type Database struct {
 	Path    string
 	GeoIPFS fs.FS
+}
+
+type Storage struct {
+	Type string `mapstructure:"-"`
+	Path string `mapstructure:"-"`
 }
 
 type Log struct {
@@ -71,6 +77,13 @@ func Load() (*Config, error) {
 
 	if config.App.Debug {
 		log.SetLevel(log.LevelDebug)
+	}
+
+	if config.Storage.Type == "" {
+		config.Storage.Type = "sqlite"
+	}
+	if config.Storage.Path == "" {
+		config.Storage.Path = "abcd.db"
 	}
 
 	if err := config.Validate(); err != nil {
