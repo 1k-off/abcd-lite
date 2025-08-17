@@ -22,6 +22,7 @@ func (m *mockProjectService) CreateProject(project domain.Project) (domain.Proje
 }
 func (m *mockProjectService) UpdateProject(project domain.Project) error { return nil }
 func (m *mockProjectService) DeleteProject(id string) error              { return nil }
+func (m *mockProjectService) DeleteAllProjects() error                   { return nil }
 func (m *mockProjectService) AddAPIKey(projectID string) (string, domain.APIKey, error) {
 	return "", domain.APIKey{}, nil
 }

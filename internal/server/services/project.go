@@ -21,6 +21,7 @@ type ProjectService interface {
 	CreateProject(project domain.Project) (domain.Project, error)
 	UpdateProject(project domain.Project) error
 	DeleteProject(id string) error
+	DeleteAllProjects() error
 	AddAPIKey(projectID string) (string, domain.APIKey, error)
 	CheckAPIKey(apiKey, hash string) bool
 	RemoveAPIKey(projectID, keyID string) error
@@ -132,6 +133,10 @@ func (s *DefaultProjectService) UpdateProject(project domain.Project) error {
 
 func (s *DefaultProjectService) DeleteProject(id string) error {
 	return s.storage.DeleteProject(id)
+}
+
+func (s *DefaultProjectService) DeleteAllProjects() error {
+	return s.storage.DeleteAllProjects()
 }
 
 func (s *DefaultProjectService) AddAPIKey(projectID string) (string, domain.APIKey, error) {

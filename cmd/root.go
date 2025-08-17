@@ -29,4 +29,6 @@ func Execute() error {
 func init() {
 	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(backupCmd)
+	rootCmd.AddCommand(restoreCmd)
 }
