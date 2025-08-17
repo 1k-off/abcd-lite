@@ -45,7 +45,7 @@ func Limits(ctx context.Context, licenseKeySigned, licenseFile string) (PackageL
 		return editionLimits(editionPersonal), deactivationFunc, err
 	}
 
-	return PackageLimits{}, nil, nil
+	return editionLimits(editionLite), deactivationFunc, nil
 }
 
 func licenseValidate(ctx context.Context, licenseKeySigned string, fingerprint string) (*keygen.License, error) {

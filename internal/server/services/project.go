@@ -19,8 +19,10 @@ type ProjectService interface {
 	GetProjects() ([]domain.Project, error)
 	GetProject(id string) (domain.Project, error)
 	CreateProject(project domain.Project) (domain.Project, error)
+	RestoreProject(project domain.Project) (domain.Project, error)
 	UpdateProject(project domain.Project) error
 	DeleteProject(id string) error
+	DeleteAllProjects() error
 	AddAPIKey(projectID string) (string, domain.APIKey, error)
 	CheckAPIKey(apiKey, hash string) bool
 	RemoveAPIKey(projectID, keyID string) error
@@ -103,6 +105,35 @@ func (s *DefaultProjectService) CreateProject(project domain.Project) (domain.Pr
 	return s.storage.CreateProject(project)
 }
 
+// RestoreProject restores a project with its original ID and timestamps
+func (s *DefaultProjectService) RestoreProject(project domain.Project) (domain.Project, error) {
+	// Check if project already exists
+	existingProject, err := s.GetProject(project.ID)
+	if err == nil {
+		return existingProject, s.UpdateProject(project)
+	}
+
+	if project.IISSites == nil {
+		project.IISSites = make([]string, 0)
+	}
+	if project.APIKeys == nil {
+		project.APIKeys = make([]domain.APIKey, 0)
+	}
+
+	// Check website limits for new sites
+	if len(project.IISSites) > 0 {
+		isWebsiteLimitExceeded, err := s.isWebsiteLimitExceeded(len(project.IISSites))
+		if err != nil {
+			return domain.Project{}, err
+		}
+		if isWebsiteLimitExceeded {
+			return domain.Project{}, errors.New(messages.ErrWebsiteLimitExceeded)
+		}
+	}
+
+	return s.storage.CreateProject(project)
+}
+
 func (s *DefaultProjectService) UpdateProject(project domain.Project) error {
 	existingProject, err := s.GetProject(project.ID)
 	if err != nil {
@@ -132,6 +163,10 @@ func (s *DefaultProjectService) UpdateProject(project domain.Project) error {
 
 func (s *DefaultProjectService) DeleteProject(id string) error {
 	return s.storage.DeleteProject(id)
+}
+
+func (s *DefaultProjectService) DeleteAllProjects() error {
+	return s.storage.DeleteAllProjects()
 }
 
 func (s *DefaultProjectService) AddAPIKey(projectID string) (string, domain.APIKey, error) {

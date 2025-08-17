@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/1k-off/abcd-lite/internal/server/domain"
@@ -17,6 +18,7 @@ type ProjectStorage interface {
 	CreateProject(project domain.Project) (domain.Project, error)
 	UpdateProject(project domain.Project) error
 	DeleteProject(id string) error
+	DeleteAllProjects() error
 	GetProjectKeys() ([]byte, error)
 	SetProjectKeys(keys []byte) error
 
@@ -69,16 +71,19 @@ func (s *GenericProjectStorage) GetProjects() ([]domain.Project, error) {
 
 	keys, err := s.driver.Get("project:keys")
 	if err != nil {
-		return projects, err
+		// If project:keys doesn't exist, return empty list (this is a valid state for a new database)
+		return projects, nil
+	}
+
+	// Handle empty data
+	if len(keys) == 0 {
+		emptyKeys, _ := json.Marshal([]string{})
+		s.driver.Set("project:keys", emptyKeys, 0)
+		return projects, nil
 	}
 
 	var projectKeys []string
 	if err := json.Unmarshal(keys, &projectKeys); err != nil {
-		if len(keys) == 0 {
-			emptyKeys, _ := json.Marshal([]string{})
-			s.driver.Set("project:keys", emptyKeys, 0)
-			return projects, nil
-		}
 		return projects, err
 	}
 
@@ -99,10 +104,23 @@ func (s *GenericProjectStorage) GetProjects() ([]domain.Project, error) {
 }
 
 func (s *GenericProjectStorage) GetProject(id string) (domain.Project, error) {
+	if id == "" {
+		return domain.Project{}, fmt.Errorf("project ID cannot be empty")
+	}
+
 	data, err := s.driver.Get("project:" + id)
 	if err != nil {
+		if err.Error() == "key not found" || err.Error() == "record not found" {
+			return domain.Project{}, fmt.Errorf("project not found: %s", id)
+		}
 		return domain.Project{}, err
 	}
+
+	// Check if the data is empty (some drivers might return empty data instead of error)
+	if len(data) == 0 {
+		return domain.Project{}, fmt.Errorf("project not found: %s", id)
+	}
+
 	var project domain.Project
 	if err := json.Unmarshal(data, &project); err != nil {
 		return domain.Project{}, err
@@ -111,6 +129,10 @@ func (s *GenericProjectStorage) GetProject(id string) (domain.Project, error) {
 }
 
 func (s *GenericProjectStorage) CreateProject(project domain.Project) (domain.Project, error) {
+	if project.ID == "" {
+		return domain.Project{}, fmt.Errorf("project ID cannot be empty")
+	}
+
 	data, err := json.Marshal(project)
 	if err != nil {
 		return domain.Project{}, err
@@ -126,13 +148,16 @@ func (s *GenericProjectStorage) CreateProject(project domain.Project) (domain.Pr
 
 	if err != nil {
 		if err.Error() == "key not found" {
+			// If project:keys doesn't exist, create it during project creation
 			projectKeys = []string{}
 		} else {
 			return domain.Project{}, err
 		}
 	} else {
-		if err := json.Unmarshal(keys, &projectKeys); err != nil {
+		if len(keys) == 0 {
 			projectKeys = []string{}
+		} else if err := json.Unmarshal(keys, &projectKeys); err != nil {
+			return domain.Project{}, err
 		}
 	}
 
@@ -150,6 +175,10 @@ func (s *GenericProjectStorage) CreateProject(project domain.Project) (domain.Pr
 }
 
 func (s *GenericProjectStorage) UpdateProject(project domain.Project) error {
+	if project.ID == "" {
+		return fmt.Errorf("project ID cannot be empty")
+	}
+
 	data, err := json.Marshal(project)
 	if err != nil {
 		return err
@@ -159,6 +188,22 @@ func (s *GenericProjectStorage) UpdateProject(project domain.Project) error {
 }
 
 func (s *GenericProjectStorage) DeleteProject(id string) error {
+	if id == "" {
+		return fmt.Errorf("project ID cannot be empty")
+	}
+
+	data, err := s.driver.Get("project:" + id)
+	if err != nil {
+		if err.Error() == "key not found" || err.Error() == "record not found" {
+			return fmt.Errorf("project not found: %s", id)
+		}
+		return err
+	}
+
+	if len(data) == 0 {
+		return fmt.Errorf("project not found: %s", id)
+	}
+
 	if err := s.driver.Delete("project:" + id); err != nil {
 		return err
 	}
@@ -169,7 +214,9 @@ func (s *GenericProjectStorage) DeleteProject(id string) error {
 	}
 
 	var projectKeys []string
-	if err := json.Unmarshal(keys, &projectKeys); err != nil {
+	if len(keys) == 0 {
+		projectKeys = []string{}
+	} else if err := json.Unmarshal(keys, &projectKeys); err != nil {
 		return err
 	}
 
@@ -197,6 +244,10 @@ func (s *GenericProjectStorage) SetProjectKeys(keys []byte) error {
 }
 
 func (s *GenericProjectStorage) AddAPIKey(projectID string, apiKey domain.APIKey) error {
+	if projectID == "" {
+		return fmt.Errorf("project ID cannot be empty")
+	}
+
 	project, err := s.GetProject(projectID)
 	if err != nil {
 		return err
@@ -207,6 +258,10 @@ func (s *GenericProjectStorage) AddAPIKey(projectID string, apiKey domain.APIKey
 }
 
 func (s *GenericProjectStorage) RemoveAPIKey(projectID, keyID string) error {
+	if projectID == "" {
+		return fmt.Errorf("project ID cannot be empty")
+	}
+
 	project, err := s.GetProject(projectID)
 	if err != nil {
 		return err
@@ -223,9 +278,45 @@ func (s *GenericProjectStorage) RemoveAPIKey(projectID, keyID string) error {
 }
 
 func (s *GenericProjectStorage) GetAPIKeys(projectID string) ([]domain.APIKey, error) {
+	if projectID == "" {
+		return nil, fmt.Errorf("project ID cannot be empty")
+	}
+
 	project, err := s.GetProject(projectID)
 	if err != nil {
 		return nil, err
 	}
 	return project.APIKeys, nil
+}
+
+// DeleteAllProjects deletes all projects from storage
+func (s *GenericProjectStorage) DeleteAllProjects() error {
+	keys, err := s.driver.Get("project:keys")
+	if err != nil {
+		return nil
+	}
+
+	if len(keys) == 0 {
+		emptyKeys, _ := json.Marshal([]string{})
+		return s.driver.Set("project:keys", emptyKeys, 0)
+	}
+
+	var projectKeys []string
+	if err := json.Unmarshal(keys, &projectKeys); err != nil {
+		// If JSON is corrupted, just clear it
+		emptyKeys, _ := json.Marshal([]string{})
+		return s.driver.Set("project:keys", emptyKeys, 0)
+	}
+
+	// Delete each project
+	for _, key := range projectKeys {
+		if err := s.driver.Delete("project:" + key); err != nil {
+			// Continue even if some deletions fail
+			continue
+		}
+	}
+
+	// Clear the project keys list
+	emptyKeys, _ := json.Marshal([]string{})
+	return s.driver.Set("project:keys", emptyKeys, 0)
 }
