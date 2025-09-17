@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/MicahParks/keyfunc/v2 v2.1.0
 	github.com/gofiber/fiber/v3 v3.0.0-beta.5
-	github.com/gofiber/storage/badger/v2 v2.1.0
+	github.com/gofiber/storage/badger/v2 v2.1.1
 	github.com/gofiber/storage/sqlite3 v1.3.8
 	github.com/gofiber/utils v1.1.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
@@ -36,7 +36,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gofiber/schema v1.6.0 // indirect
-	github.com/gofiber/utils/v2 v2.0.0-beta.13 // indirect
+	github.com/gofiber/utils/v2 v2.0.0-rc.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
