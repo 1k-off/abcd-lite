@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/MicahParks/keyfunc/v2 v2.1.0
 	github.com/gofiber/fiber/v3 v3.0.0-rc.3
-	github.com/gofiber/storage/badger/v2 v2.1.1
+	github.com/gofiber/storage/badger/v2 v2.1.2
 	github.com/gofiber/storage/sqlite3 v1.3.8
 	github.com/gofiber/utils v1.1.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
@@ -41,7 +41,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
-	github.com/google/flatbuffers v25.2.10+incompatible // indirect
+	github.com/google/flatbuffers v25.9.23+incompatible // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
@@ -81,7 +81,7 @@ require (
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	oras.land/oras-go/v2 v2.6.0 // indirect
 )
