@@ -10,7 +10,7 @@ require (
 	github.com/gofiber/utils v1.1.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
-	github.com/keygen-sh/keygen-go/v3 v3.2.1
+	github.com/keygen-sh/keygen-go/v3 v3.3.0
 	github.com/keygen-sh/machineid v1.1.1
 	github.com/oschwald/geoip2-golang v1.13.0
 	github.com/spf13/cobra v1.10.1
