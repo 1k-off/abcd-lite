@@ -67,8 +67,8 @@ github.com/gofiber/storage/badger/v2 v2.1.1 h1:+FZFSPtAD4U9WLTVGs/TEyWf8Xxjd2h+E
 github.com/gofiber/storage/badger/v2 v2.1.1/go.mod h1:yCfmvWKXKJHvhhHQDKH8tudb7yJJkXpwXhrP80wRJS4=
 github.com/gofiber/storage/sqlite3 v1.3.8 h1:ywicq0MvlO4H+IbxwvSq3GvTv25fmhEZ1LpEkd8b078=
 github.com/gofiber/storage/sqlite3 v1.3.8/go.mod h1:G4A9R3Ac2G9Wpb76F62oEqXUTb0ywjTIr5P7obiZmYc=
-github.com/gofiber/utils v1.1.0 h1:vdEBpn7AzIUJRhe+CiTOJdUcTg4Q9RK+pEa0KPbLdrM=
-github.com/gofiber/utils v1.1.0/go.mod h1:poZpsnhBykfnY1Mc0KeEa6mSHrS3dV0+oBWyeQmb2e0=
+github.com/gofiber/utils v1.2.0 h1:NCaqd+Efg3khhN++eeUUTyBz+byIxAsmIjpl8kKOMIc=
+github.com/gofiber/utils v1.2.0/go.mod h1:poZpsnhBykfnY1Mc0KeEa6mSHrS3dV0+oBWyeQmb2e0=
 github.com/gofiber/utils/v2 v2.0.0-rc.2 h1:NvJTf7yMafTq16lUOJv70nr+HIOLNQcvGme/X+ftbW8=
 github.com/gofiber/utils/v2 v2.0.0-rc.2/go.mod h1:gXins5o7up+BQFiubmO8aUJc/+Mhd7EKXIiAK5GBomI=
 github.com/gogo/protobuf v1.3.2 h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=

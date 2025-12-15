@@ -7,7 +7,7 @@ require (
 	github.com/gofiber/fiber/v3 v3.0.0-rc.3
 	github.com/gofiber/storage/badger/v2 v2.1.1
 	github.com/gofiber/storage/sqlite3 v1.3.8
-	github.com/gofiber/utils v1.1.0
+	github.com/gofiber/utils v1.2.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/keygen-sh/keygen-go/v3 v3.2.1
