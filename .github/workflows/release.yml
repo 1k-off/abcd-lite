@@ -64,7 +64,7 @@ jobs:
           Get-ChildItem -Directory -Name "GeoLite2-Country_*" | Remove-Item -Recurse -Force
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           version: latest
           args: release --clean
